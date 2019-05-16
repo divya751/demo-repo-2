@@ -1,0 +1,11 @@
+{
+  "stackName": "EcsIamResources",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "opts": "--capabilities CAPABILITY_NAMED_IAM",
+  "parameters": {
+    "KmsDefaultKeyId": "e7a95877-5f83-4be7-bad1-c75f564f2002"
+  }
+}

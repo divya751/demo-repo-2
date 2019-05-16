@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Lambdas for the frontend Cloudfront distribution
+
+Parameters:
+  FrontendCDN:
+    Type: String
+  FunctionName:
+    Type: String
+    Default: RewriteUrls
+
+Resources:
+  LambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - edgelambda.amazonaws.com
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /service-role/
+      Policies:
+        - PolicyName: lambda-edge-policy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: 'arn:aws:logs:*:*:*'
+      RoleName: iamrEdgeLambdaExecution
+  Rewriter:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: !Ref FunctionName
+      MemorySize: 128
+      Description: Rewrite URLs for non-file paths so they can be routed client-side
+      Handler: url-rewrite.handler
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: nodejs6.10
+      Timeout: 1
+  LambdaInvokePermissions:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref Rewriter
+      Principal: edgelambda.amazonaws.com
+      SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${FrontendCDN}'
+  LambdaReplicatePermissions:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:GetFunction'
+      FunctionName: !Ref Rewriter
+      Principal: replicator.lambda.amazonaws.com
+  RewriterVersion:
+    Type: 'AWS::Lambda::Version'
+    Properties:
+      FunctionName: !Ref Rewriter
+
+Outputs:
+  LambdaArn:
+    Description: ARN of Lambda function
+    Value: !GetAtt Rewriter.Arn
+  LambdaVersionArn:
+    Description: ARN of the current version of the Lambda function
+    Value: !Ref RewriterVersion
+  LambdaFunctionName:
+    Value: !Ref FunctionName

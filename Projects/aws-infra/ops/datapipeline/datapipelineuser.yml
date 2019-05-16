@@ -1,0 +1,21 @@
+Resources:
+  User:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: backup_user
+      Path: /service-user/
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonRDSFullAccess
+      - arn:aws:iam::aws:policy/AmazonEC2FullAccess
+      - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      - arn:aws:iam::aws:policy/AmazonVPCFullAccess
+      - arn:aws:iam::aws:policy/AmazonRoute53FullAccess
+      - arn:aws:iam::aws:policy/IAMFullAccess
+      - arn:aws:iam::aws:policy/IAMUserSSHKeys
+      - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccesswithDataPipeline
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforDataPipelineRole
+  AccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName:
+        !Ref User

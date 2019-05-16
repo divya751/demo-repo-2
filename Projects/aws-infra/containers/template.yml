@@ -1,0 +1,170 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: ECS cluster, EFS file system, and application load balancer
+
+Parameters:
+  KeyName:
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the ECS instances.
+  DesiredCapacity:
+    Type: Number
+    Default: '2'
+    Description: Number of instances to launch in your ECS cluster.
+  MinSize:
+    Type: Number
+    Default: '2'
+    Description: Minimum number of instances that can be launched in your ECS cluster.
+  MaxSize:
+    Type: Number
+    Default: '10'
+    Description: Maximum number of instances that can be launched in your ECS cluster.
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.small
+    AllowedValues:
+      - t2.small
+      - t2.medium
+      - t2.large
+  ScaleUpPercent:
+    Type: Number
+    Default: '75'
+  ScaleDownPercent:
+    Type: Number
+    Default: '60'
+  DatadogAPIKey:
+    Type: String
+    Description: Enter unique API key for your organization. API key is required by the Datadog Agent to submit metrics and events to Datadog
+  DeregistrationDelay:
+    Type: String
+    Description: How many seconds to drain services before shutting them down
+
+Resources:
+  EcsInstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: ECS instance security group
+      VpcId: !ImportValue VPC
+  FileSystem:
+    Type: 'AWS::CloudFormation::Stack'
+    Properties:
+      TemplateURL: efs.yml
+      Parameters:
+        EcsInstanceSecurityGroup: !Ref EcsInstanceSecurityGroup
+  DatadogTaskDefinition:
+      Type: 'AWS::CloudFormation::Stack'
+      Properties:
+        TemplateURL: datadog.yml
+        Parameters:
+          DatadogAPIKey: !Ref DatadogAPIKey
+  Cluster:
+    DependsOn: DatadogTaskDefinition
+    Type: 'AWS::CloudFormation::Stack'
+    Properties:
+      TemplateURL: cluster.yml
+      Parameters:
+        KeyName: !Ref KeyName
+        DesiredCapacity: !Ref DesiredCapacity
+        MinSize: !Ref MinSize
+        MaxSize: !Ref MaxSize
+        InstanceType: !Ref InstanceType
+        ScaleUpPercent: !Ref ScaleUpPercent
+        ScaleDownPercent: !Ref ScaleDownPercent
+        EcsInstanceSecurityGroup: !Ref EcsInstanceSecurityGroup
+        FileSystem: !GetAtt FileSystem.Outputs.FileSystem
+  PublicLB:
+    Type: 'AWS::CloudFormation::Stack'
+    Properties:
+      TemplateURL: public-load-balancer.yml
+      Parameters:
+        Cluster: !GetAtt Cluster.Outputs.Cluster
+        DeregistrationDelay: !Ref DeregistrationDelay
+  InternalLB:
+    Type: 'AWS::CloudFormation::Stack'
+    Properties:
+      TemplateURL: internal-load-balancer.yml
+      Parameters:
+        DeregistrationDelay: !Ref DeregistrationDelay
+  Alarms:
+      Type: 'AWS::CloudFormation::Stack'
+      Properties:
+        TemplateURL: alarms.yml
+  PrivateHostedZone:
+    Type: 'AWS::Route53::HostedZone'
+    Properties:
+      VPCs:
+        - VPCId: !ImportValue VPC
+          VPCRegion: !Ref 'AWS::Region'
+      HostedZoneConfig:
+        Comment: !Sub 'Private hosted zone for service discovery'
+      Name: 'service'
+
+Outputs:
+  ECSCluster:
+    Value: !GetAtt Cluster.Outputs.Cluster
+    Export:
+      Name: EcsCluster
+  ServicePrivateHostedZone:
+    Description: 'HostedZone id'
+    Value: !Ref PrivateHostedZone
+    Export:
+      Name: ServiceHostedZone
+  InternalLoadBalancer:
+    Description: The internal ALB ARN
+    Value: !GetAtt InternalLB.Outputs.LoadBalancer
+    Export:
+      Name: EcsInternalAlb
+  InternalLoadBalancerDNS:
+    Description: The internal ALB DNS URL
+    Value: !GetAtt InternalLB.Outputs.LoadBalancerDNS
+    Export:
+      Name: EcsInternalAlbDns
+  InternalLoadBalancerHostedZoneId:
+    Value: !GetAtt InternalLB.Outputs.LoadBalancerHostedZoneId
+    Export:
+      Name: EcsInternalAlbHostedZoneID
+  InternalLoadBalancerFullName:
+    Value: !GetAtt InternalLB.Outputs.LoadBalancerFullName
+    Export:
+      Name: EcsInternalAlbFullName
+  InternalLoadBalancerHTTPListener:
+    Value: !GetAtt InternalLB.Outputs.LoadBalancerHTTPListener
+    Export:
+      Name: EcsInternalAlbHttpListener
+  InternalLoadBalancerSecurityGroup:
+    Value: !GetAtt InternalLB.Outputs.LoadBalancerSecurityGroup
+    Export:
+      Name: EcsInternalAlbSecurityGroup
+  PublicLoadBalancer:
+    Description: The internet-facing ALB ARN
+    Value: !GetAtt PublicLB.Outputs.LoadBalancer
+    Export:
+      Name: EcsPublicAlb
+  PublicLoadBalancerDNS:
+    Description: The internal ALB DNS URL
+    Value: !GetAtt PublicLB.Outputs.LoadBalancerDNS
+    Export:
+      Name: EcsPublicAlbDns
+  PublicLoadBalancerHostedZoneId:
+    Value: !GetAtt PublicLB.Outputs.LoadBalancerHostedZoneId
+    Export:
+      Name: EcsPublicAlbHostedZoneID
+  PublicLoadBalancerFullName:
+    Value: !GetAtt PublicLB.Outputs.LoadBalancerFullName
+    Export:
+      Name: EcsPublicAlbFullName
+  PublicLoadBalancerHTTPListener:
+    Value: !GetAtt PublicLB.Outputs.LoadBalancerHTTPListener
+    Export:
+      Name: EcsPublicAlbHttpListener
+  PublicLoadBalancerHTTPSListener:
+    Value: !GetAtt PublicLB.Outputs.LoadBalancerHTTPSListener
+    Export:
+      Name: EcsPublicAlbHttpsListener
+  FileSystem:
+    Value: !GetAtt FileSystem.Outputs.FileSystem
+    Export:
+      Name: FileSystem
+  DatadogTaskDefinition:
+      Value: !Ref DatadogAPIKey
+      Export:
+        Name: DatadogAPIKey

@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: S3 bucket with website configuration for Swagger UI
+
+Parameters:
+  BucketName:
+    Type: String
+
+Resources:
+  Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub
+        - '${BucketName}-${Environment}'
+        - Environment: !ImportValue AccountEnvironment
+      AccessControl: PublicRead
+      VersioningConfiguration:
+        Status: Enabled
+      WebsiteConfiguration:
+        IndexDocument: index.html
+
+  BucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      PolicyDocument:
+        Id: SwaggerBucketObjectPolicy
+        Version: 2012-10-17
+        Statement:
+          - Sid: PublicReadObjects
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Sub 'arn:aws:s3:::${Bucket}/*'
+      Bucket: !Ref Bucket
+
+Outputs:
+  BucketName:
+    Description: The Swagger UI S3
+    Value: !Ref Bucket
+    Export:
+      Name: SwaggerUIBucketName

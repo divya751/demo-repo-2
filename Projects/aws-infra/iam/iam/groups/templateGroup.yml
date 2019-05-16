@@ -1,0 +1,164 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Sandbox group for full access sans IAM and billing. Also creates Admin,
+  Billing, and IamAdmin groups
+
+Resources:
+  DevelopersPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: >-
+        Allow MFA users to access everything except billing and other IAM
+        resources than themselves
+      ManagedPolicyName: Developers
+      Path: /developers/
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowAllUsersToListAccounts
+            Effect: Allow
+            Action:
+              - 'iam:ListAccountAliases'
+              - 'iam:GetAccountPasswordPolicy'
+              - 'iam:ListUsers'
+            Resource: '*'
+          - Sid: AllowIndividualUserToSeeTheirAccountInformationAndChangeTheirPassword
+            Effect: Allow
+            Action:
+              - 'iam:GetAccountSummary'
+              - 'iam:ChangePassword'
+            Resource:
+            - !Join ['', [!Sub 'arn:aws:iam::${AWS::AccountId}:user/', '${aws:username}']]
+          - Sid: AllowIndividualUserToManageTheirAccountInformationWhenMFAd
+            Effect: Allow
+            Action:
+              - 'iam:*LoginProfile'
+              - 'iam:*AccessKey*'
+              - 'iam:*SSHPublicKey*'
+            Resource:
+              - !Join ['', [!Sub 'arn:aws:iam::${AWS::AccountId}:user/', '${aws:username}']]
+            Condition:
+              Bool:
+                'aws:MultiFactorAuthPresent': true
+          - Sid: AllowIndividualUserToListTheirMFA
+            Effect: Allow
+            Action:
+              - 'iam:ListVirtualMFADevices'
+              - 'iam:ListMFADevices'
+            Resource:
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:mfa/*'
+              - !Join ['', [!Sub 'arn:aws:iam::${AWS::AccountId}:user/', '${aws:username}']]
+          - Sid: AllowIndividualUserToManageTheirMFA
+            Effect: Allow
+            Action:
+              - 'iam:CreateVirtualMFADevice'
+              - 'iam:DeactivateMFADevice'
+              - 'iam:DeleteVirtualMFADevice'
+              - 'iam:EnableMFADevice'
+              - 'iam:ResyncMFADevice'
+            Resource:
+              - !Join ['', [!Sub 'arn:aws:iam::${AWS::AccountId}:mfa/', '${aws:username}']]
+              - !Join ['', [!Sub 'arn:aws:iam::${AWS::AccountId}:user/', '${aws:username}']]
+          - Sid: AssumeReadOnlyRoleAtHusdyrfag
+            Effect: Allow
+            Action:
+              - 'sts:AssumeRole'
+            Resource:
+              - 'arn:aws:iam::576279076904:role/ReadOnly'
+              - 'arn:aws:iam::751750612325:role/ReadOnly'
+              - 'arn:aws:iam::067191250127:role/ReadOnly'
+              - 'arn:aws:iam::831775572745:role/ReadOnly'
+              - 'arn:aws:iam::314237564965:role/ReadOnly'
+              - 'arn:aws:iam::119826691357:role/ReadOnly'
+              - 'arn:aws:iam::925832396712:role/ReadOnly'
+              - 'arn:aws:iam::443752695090:role/ReadOnly'
+              - 'arn:aws:iam::190592171687:role/ReadOnly'
+              - 'arn:aws:iam::576279076904:role/Debug'
+              - 'arn:aws:iam::067191250127:role/Debug'
+              - 'arn:aws:iam::831775572745:role/Debug'
+              - 'arn:aws:iam::314237564965:role/Debug'
+              - 'arn:aws:iam::119826691357:role/Debug'
+              - 'arn:aws:iam::925832396712:role/Debug'
+              - 'arn:aws:iam::443752695090:role/Debug'
+              - 'arn:aws:iam::190592171687:role/Debug'
+              - 'arn:aws:iam::751750612325:role/service-role/CloudFormation'
+              - 'arn:aws:iam::067191250127:role/service-role/CloudFormation'
+              - 'arn:aws:iam::831775572745:role/service-role/CloudFormation'
+              - 'arn:aws:iam::314237564965:role/service-role/CloudFormation'
+              - 'arn:aws:iam::119826691357:role/service-role/CloudFormation'
+              - 'arn:aws:iam::925832396712:role/service-role/CloudFormation'
+              - 'arn:aws:iam::443752695090:role/service-role/CloudFormation'
+              - 'arn:aws:iam::831775572745:role/Developer'
+            Condition:
+              Bool:
+                'aws:MultiFactorAuthPresent': true
+  AdminPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: Allow admin users to assume Admin role i Master/Billing account
+      ManagedPolicyName: AdminAtMaster
+      Path: /admin/
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AssumeAdminRoleAtMaster
+            Effect: Allow
+            Action:
+              - 'sts:AssumeRole'
+            Resource: 'arn:aws:iam::641159406575:role/HusdyrfagAdmin'
+            Condition:
+              Bool:
+                aws:MultiFactorAuthPresent: true
+  BillingPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: Allow users in biling group to assume Billing role i Master/Billing account
+      ManagedPolicyName: BillingAtMaster
+      Path: /other/
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AssumeBillingRoleAtMaster
+            Effect: Allow
+            Action:
+              - 'sts:AssumeRole'
+            Resource: 'arn:aws:iam::641159406575:role/Billing'
+            # Condition:
+            #   Bool:
+            #     aws:aws:MultiFactorAuthPresent: true
+          - Sid: AllowPortalAndBudget
+            Effect: Allow
+            Action:
+              - 'aws-portal:*'
+              - 'budgets:*'
+            Resource: '*'
+  DeveloperGroup:
+    Type: 'AWS::IAM::Group'
+    Properties:
+      GroupName: Developers
+      ManagedPolicyArns:
+        - !Ref DevelopersPolicy
+      Path: /developers/
+  AdminGroup:
+    Type: 'AWS::IAM::Group'
+    Properties:
+      GroupName: Admin
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AdministratorAccess'
+        - !Ref AdminPolicy
+      Path: /admin/
+  IAMAdminGroup:
+    Type: 'AWS::IAM::Group'
+    Properties:
+      GroupName: IAMAdmin
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/IAMFullAccess'
+      Path: /admin/
+  BillingGroup:
+    Type: 'AWS::IAM::Group'
+    Properties:
+      GroupName: Billing
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/job-function/Billing'
+        - !Ref BillingPolicy
+      Path: /other/

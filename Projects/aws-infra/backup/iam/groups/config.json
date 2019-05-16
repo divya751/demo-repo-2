@@ -1,0 +1,9 @@
+{
+  "stackName": "IamGroups",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform",
+    "Environment": "Backup"
+  },
+  "opts": "--capabilities CAPABILITY_NAMED_IAM"
+}

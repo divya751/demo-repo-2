@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: PostgreSQL RDS instance
+
+Parameters:
+  DbUser:
+    Type: String
+  DbPassword:
+    Type: String
+  DbName:
+    Type: String
+
+Resources:
+  DbSecurityGroup:
+    Type: 'AWS::RDS::DBSecurityGroup'
+    Properties:
+      EC2VpcId: !ImportValue VPC
+      GroupDescription: !Sub '${DbName} Database access'
+      DBSecurityGroupIngress:
+        - CIDRIP: !ImportValue VPCCidrBlock
+
+  DbSubnetGroup:
+    Type: 'AWS::RDS::DBSubnetGroup'
+    Properties:
+      DBSubnetGroupDescription: Database subnets
+      DBSubnetGroupName: !Sub '${DbName}-db-subnets'
+      SubnetIds:
+        - !ImportValue PrivateSubnetAZA
+        - !ImportValue PrivateSubnetAZB
+        - !ImportValue PrivateSubnetAZC
+
+  Database:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      AllocatedStorage: 20
+      BackupRetentionPeriod: 10
+      DBInstanceClass: db.t2.medium
+      DBName: !Ref DbName
+      DBSecurityGroups:
+        - !Ref DbSecurityGroup
+      DBSubnetGroupName: !Ref DbSubnetGroup
+      Engine: Postgres
+      EngineVersion: 9.6.6
+      MasterUsername: !Ref DbUser
+      MasterUserPassword: !Ref DbPassword
+
+Outputs:
+  Database:
+    Value: !Ref Database
+  EndpointAddress:
+    Value: !GetAtt Database.Endpoint.Address
+  EndpointPort:
+    Value: !GetAtt Database.Endpoint.Port

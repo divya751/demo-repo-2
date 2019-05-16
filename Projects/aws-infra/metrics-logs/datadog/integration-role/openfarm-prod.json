@@ -1,0 +1,11 @@
+{
+  "stackName": "DatadogIntegration",
+  "parameters": {
+    "ExternalID": "e55a6575aa264cb0b57d0959465e7011"
+  },
+  "tags": {
+    "CostCenter": "OpenFarm",
+    "SystemContext": "Platform"
+  },
+  "opts": "--capabilities CAPABILITY_NAMED_IAM"
+}

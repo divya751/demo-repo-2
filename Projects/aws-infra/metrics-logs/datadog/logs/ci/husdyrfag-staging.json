@@ -1,0 +1,12 @@
+{
+  "stackName": "DatadogLogs",
+  "parameters": {
+    "DatadogAPIKey": "74b025d9c27fe3a84a1608704e2097fc"
+  },
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "template": "../cf/template.yml",
+  "opts": "--capabilities CAPABILITY_NAMED_IAM"
+}

@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Creates the record sets for husdyrfag.io
+
+Resources:
+  RecordSetGroup:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: 'husdyrfag.io.'
+      RecordSets:
+      # - Name: 'ci.husdyrfag.io'
+      #   Type: A
+      #   TTL: '900'
+      #   ResourceRecords:
+      #   - '54.171.248.186'
+
+        - Name: _amazonses.husdyrfag.io.
+          Type: TXT
+          TTL: '900'
+          ResourceRecords:
+            - '"Vo+WKiCiF8Ze2Mr4FvaE3OpPddki/1aZLxX/8xwTTus="'
+
+        - Name: husdyrfag.io.
+          Type: MX
+          TTL: '900'
+          ResourceRecords:
+            - '10 inbound-smtp.eu-west-1.amazonaws.com.'
+
+        - Name: autodiscover.husdyrfag.io.
+          Type: CNAME
+          TTL: '900'
+          ResourceRecords:
+            - 'autodiscover.mail.eu-west-1.awsapps.com.'
+
+        - Name: xercjysjub4btulkerkuxb33g3lc2bjb._domainkey.husdyrfag.io.
+          Type: CNAME
+          TTL: '300'
+          ResourceRecords:
+            - 'xercjysjub4btulkerkuxb33g3lc2bjb.dkim.amazonses.com.'
+
+        - Name: 7isgcxl6r4jmwp77kejhetp3lvpogm4j._domainkey.husdyrfag.io.
+          Type: CNAME
+          TTL: '300'
+          ResourceRecords:
+            - '7isgcxl6r4jmwp77kejhetp3lvpogm4j.dkim.amazonses.com.'
+
+        - Name: ifzzhzw5mk6hu4skfp4ue6mtrqazedtj._domainkey.husdyrfag.io.
+          Type: CNAME
+          TTL: '300'
+          ResourceRecords:
+            - 'ifzzhzw5mk6hu4skfp4ue6mtrqazedtj.dkim.amazonses.com.'

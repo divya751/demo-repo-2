@@ -1,0 +1,13 @@
+{
+  "stackName": "InfrastructureBucket",
+  "parameters": {
+    "BucketName": "infrastructure-artifacts",
+    "AccountEnvironment": "openfarm-dev"
+  },
+  "template": "template-us-east.yml",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "region": "us-east-1"
+}

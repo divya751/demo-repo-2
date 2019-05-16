@@ -1,0 +1,4 @@
+project_name: logs
+git_repo: git@github.com:TINE-SA/aws-infra.git
+git_path_prefix: metrics-logs/datadog/logs/
+git_paths: metrics-logs/datadog/logs/

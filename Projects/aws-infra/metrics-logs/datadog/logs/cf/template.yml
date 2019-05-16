@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Lambda function that respond to S3 and CloudWatch log events and send them to Datadog platform
+
+Parameters:
+  DatadogAPIKey:
+    Type: String
+    Description: Enter unique API key for your organization. API key is required by the Datadog Agent to submit metrics and events to Datadog
+
+Resources:
+  DatadogLogsRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ['lambda.amazonaws.com']
+            Action: ['sts:AssumeRole']
+      Policies:
+        - PolicyName: s3-read-only
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                Resource: 'arn:aws:s3:::*'
+
+  DatadogLogsInvokePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !Ref DatadogLogs
+      Action: lambda:InvokeFunction
+      Principal: logs.amazonaws.com
+      SourceArn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+      SourceAccount: !Sub '${AWS::AccountId}'
+
+  DatadogLogs:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: DatadogLogs
+      Description: Push logs to Datadog from S3 and CloudWatch
+      Handler: lambda_function.lambda_handler
+      Runtime: python2.7
+      Timeout: 120
+      MemorySize: 1024
+      Role: !GetAtt DatadogLogsRole.Arn
+      Code: ../log-function
+      Environment:
+        Variables:
+          DATADOG_API_KEY: !Ref DatadogAPIKey
+
+Outputs:
+  DatadogLogsArn:
+    Description: The Datadog logs lambda ARN
+    Value: !GetAtt DatadogLogs.Arn
+    Export:
+      Name: DatadogLogsArn

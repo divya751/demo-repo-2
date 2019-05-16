@@ -1,0 +1,18 @@
+{
+  "stackName": "EcsCluster",
+  "tags": {
+    "CostCenter": "OpenFarm",
+    "SystemContext": "Platform"
+  },
+  "parameters": {
+    "KeyName": "ecs-ec2-instances",
+    "MaxSize": "10",
+    "DatadogAPIKey": "560ae39e388c9c01867c9b22c81fe189",
+    "DeregistrationDelay": "30",
+    "InstanceType": "t2.medium"
+  },
+  "filePrefix": "datadog-agent/",
+  "files": [
+    "datadog-agent.yaml"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "stackName": "InfrastructureBucket",
+  "parameters": {
+    "BucketName": "infrastructure-artifacts",
+    "AccountEnvironment": "openfarm-staging"
+  },
+  "template": "template-us-east.yml",
+  "tags": {
+    "CostCenter": "OpenFarm",
+    "SystemContext": "Platform"
+  },
+  "region": "us-east-1"
+}

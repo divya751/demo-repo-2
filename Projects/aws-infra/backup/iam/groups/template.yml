@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Backup group for full access sans IAM and billing.
+
+Resources:
+  AdminPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: >-
+        Allow MFA users to access everything except billing and other IAM
+        resources than themselves
+      ManagedPolicyName: iammpAdministrators
+      Path: /
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowAllExceptIAMAndPortalIfMFAd
+            Effect: Allow
+            NotAction:
+              - 'iam:*'
+              - 'aws-portal:*'
+            Resource: '*'
+            Condition:
+              Bool:
+                aws:aws:MultiFactorAuthPresent: true
+          - Sid: AllowAllUsersToListAccounts
+            Effect: Allow
+            Action:
+              - 'iam:ListAccountAliases'
+              - 'iam:GetAccountPasswordPolicy'
+              - 'iam:ListUsers'
+            Resource: '*'
+          - Sid: AllowIndividualUserToSeeTheirAccountInformation
+            Effect: Allow
+            Action:
+              - 'iam:GetAccountSummary'
+            Resource:
+              - !Join ['', [!Sub 'arn:aws:iam::${AWS::AccountId}:user/', '${aws:username}']]
+          - Sid: AllowIndividualUserToManageTheirAccountInformationWhenMFAd
+            Effect: Allow
+            Action:
+              - 'iam:ChangePassword'
+              - 'iam:*LoginProfile'
+              - 'iam:*AccessKey*'
+              - 'iam:*SSHPublicKey*'
+            Resource:
+              - !Join ['', [!Sub 'arn:aws:iam::${AWS::AccountId}:user/', '${aws:username}']]
+            Condition:
+              Bool:
+                'aws:MultiFactorAuthPresent': true
+          - Sid: AllowIndividualUserToListTheirMFA
+            Effect: Allow
+            Action:
+              - 'iam:ListVirtualMFADevices'
+              - 'iam:ListMFADevices'
+            Resource:
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:mfa/*'
+              - !Join ['', [!Sub 'arn:aws:iam::${AWS::AccountId}:user/', '${aws:username}']]
+          - Sid: AllowIndividualUserToManageTheirMFA
+            Effect: Allow
+            Action:
+              - 'iam:CreateVirtualMFADevice'
+              - 'iam:DeactivateMFADevice'
+              - 'iam:DeleteVirtualMFADevice'
+              - 'iam:EnableMFADevice'
+              - 'iam:ResyncMFADevice'
+            Resource:
+              - !Join ['', [!Sub 'arn:aws:iam::${AWS::AccountId}:mfa/', '${aws:username}']]
+              - !Join ['', [!Sub 'arn:aws:iam::${AWS::AccountId}:user/', '${aws:username}']]
+  AdminGroup:
+    Type: 'AWS::IAM::Group'
+    Properties:
+      GroupName: iamgAdmin
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AdministratorAccess'
+        - !Ref AdminPolicy
+      Path: /admin/

@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: S3 bucket for infrastructure artifacts
+
+Parameters:
+  BucketName:
+    Description: Name of the bucket to store artifacts
+    Type: String
+  AccountEnvironment:
+    Type: String
+
+Resources:
+  Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub '${BucketName}-${AccountEnvironment}-us-east-1'
+      VersioningConfiguration:
+        Status: Enabled
+
+Outputs:
+  BucketName:
+    Description: The S3 bucket for infrastructure artifacts
+    Value: !Ref Bucket
+    Export:
+      Name: InfrastructureBucketName
+  AccountEnvironment:
+    Value: !Ref AccountEnvironment
+    Export:
+      Name: AccountEnvironment

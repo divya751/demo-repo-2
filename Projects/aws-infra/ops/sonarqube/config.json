@@ -1,0 +1,13 @@
+{
+  "stackName": "SonarQube",
+  "parameters": {
+    "SubDomain": "sonar",
+    "DbName": "sonarqube",
+    "DbUser": "sonarqube",
+    "DbPassword": "S0meOtherP4ssw0rd"
+  },
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  }
+}

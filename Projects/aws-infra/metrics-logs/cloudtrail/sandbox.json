@@ -1,0 +1,12 @@
+{
+  "stackName": "CloudTrail",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "parameters": {
+    "LogBucketName": "iekj-s3b-ec1-b-logs-backup"
+  },
+  "opts": "--capabilities CAPABILITY_NAMED_IAM",
+  "region": "eu-west-1"
+}

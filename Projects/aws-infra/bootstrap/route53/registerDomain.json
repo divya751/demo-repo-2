@@ -1,0 +1,43 @@
+{
+    "DurationInYears": 1,
+    "AutoRenew": true,
+    "AdminContact": {
+        "FirstName": "Rune",
+        "LastName": "Engseth",
+        "ContactType": "COMPANY",
+        "OrganizationName": "TINE-SA",
+        "AddressLine1": "Postboks 25",
+        "City": "Oslo",
+        "CountryCode": "NO",
+        "ZipCode": "0051",
+        "PhoneNumber": "+47.91880773",
+        "Email": "rune.engseth@tine.no"
+    },
+    "RegistrantContact": {
+      "FirstName": "Rune",
+      "LastName": "Engseth",
+      "ContactType": "COMPANY",
+      "OrganizationName": "TINE-SA",
+      "AddressLine1": "Postboks 25",
+      "City": "Oslo",
+      "CountryCode": "NO",
+      "ZipCode": "0051",
+      "PhoneNumber": "+47.91880773",
+      "Email": "rune.engseth@tine.no"
+    },
+    "TechContact": {
+      "FirstName": "Rune",
+      "LastName": "Engseth",
+      "ContactType": "COMPANY",
+      "OrganizationName": "TINE-SA",
+      "AddressLine1": "Postboks 25",
+      "City": "Oslo",
+      "CountryCode": "NO",
+      "ZipCode": "0051",
+      "PhoneNumber": "+47.91880773",
+      "Email": "rune.engseth@tine.no"
+    },
+    "PrivacyProtectAdminContact": true,
+    "PrivacyProtectRegistrantContact": true,
+    "PrivacyProtectTechContact": true
+}

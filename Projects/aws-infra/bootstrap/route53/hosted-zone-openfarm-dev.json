@@ -1,0 +1,18 @@
+{
+  "stackName": "HostedZones",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "template": "hosted-zone.yml",
+  "parameters": {
+    "HostName": "openfarm-dev.io",
+    "Environment": "openfarm-dev",
+    "SESVerificationValue": "rumoHig6FOgy0EO9RvtnSuHYkgkKApYXCedGkkvf8Qs=",
+    "MX": "10 inbound-smtp.eu-west-1.amazonaws.com.",
+    "AutoDiscover": "autodiscover.mail.eu-west-1.awsapps.com.",
+    "DkimVerification1": "icnoslobkxk7g65urf7t67r4ipmuht56",
+    "DkimVerification2": "okacjwggrc3cfdb6tiyrr442zrtgej4x",
+    "DkimVerification3": "kdfmoa22wkcsjywhkezs6d7yk2upfzuk"
+  }
+}

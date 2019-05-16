@@ -1,0 +1,16 @@
+{
+  "Comment": "Delete ci.husdyrfag-ops.io ALIAS",
+  "Changes": [{
+    "Action": "DELETE",
+    "ResourceRecordSet": {
+      "Name": "ci.husdyrfag-ops.io",
+      "Type": "A",
+      "TTL": 60,
+      "ResourceRecords": [
+        {
+          "Value": "34.245.253.239"
+        }
+      ]
+    }
+  }]
+}

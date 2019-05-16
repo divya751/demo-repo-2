@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Activates CloudTrail Trail to s3 bucket in backup account.
+
+Parameters:
+  LogBucketName:
+    Type: String
+    Description: 'Bucket name in Backup account.'
+
+Resources:
+  Trail:
+    Type: 'AWS::CloudTrail::Trail'
+    Properties:
+      IsMultiRegionTrail: true
+      TrailName: ToBackup
+      IsLogging: true
+      IncludeGlobalServiceEvents: true
+      S3BucketName: !Ref LogBucketName
+      EnableLogFileValidation: false
+      CloudWatchLogsLogGroupArn: !GetAtt llgCtt.Arn
+      CloudWatchLogsRoleArn: !GetAtt iamrCttLogsDelivery.Arn
+  llgCtt:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: /aws/cloudTrail/
+  iamrCttLogsDelivery:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: iamrCttLogsDelivery
+      Path: /service-role/
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: CloudtrailsTrailLogDelivery
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AWSCloudTrailCreateLogStream234234
+                Effect: Allow
+                Action:
+                  - 'logs:*'
+                Resource:
+                  - 'arn:aws:logs:*'

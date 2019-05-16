@@ -1,0 +1,136 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Nexus
+
+Parameters:
+  SubDomain:
+    Type: String
+
+Resources:
+  CloudwatchLogsGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: 'Nexus'
+      RetentionInDays: 14
+  TargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckIntervalSeconds: 60
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      Name: NexusTargetGroup
+      Port: '8081'
+      Protocol: HTTP
+      UnhealthyThresholdCount: 4
+      VpcId: !ImportValue VPC
+  TaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      Family: 'Nexus'
+      Volumes:
+        - Name: 'nexus-storage'
+          Host:
+            SourcePath: '/mnt/efs/nexus-data'
+      ContainerDefinitions:
+        - Name: nexus-web
+          Cpu: 512
+          Essential: true
+          Image: sonatype/nexus3
+          Memory: 2048
+          MemoryReservation: 1536
+          PortMappings:
+            - ContainerPort: '8081'
+              HostPort: '0'
+          MountPoints:
+            - SourceVolume: nexus-storage
+              ContainerPath: /nexus-data
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref CloudwatchLogsGroup
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: nexus-web
+          Ulimits:
+            - Name: nofile
+              HardLimit: 65536
+              SoftLimit: 16384
+  Service:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      Cluster: !ImportValue EcsCluster
+      DesiredCount: '1'
+      LoadBalancers:
+        - ContainerName: nexus-web
+          ContainerPort: '8081'
+          TargetGroupArn: !Ref TargetGroup
+      Role: !ImportValue ECSServiceRole
+      TaskDefinition: !Ref TaskDefinition
+      ServiceName: Nexus
+  HTTPSRule:
+    Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
+    Properties:
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+      Conditions:
+        - Field: host-header
+          Values:
+            - !Sub
+              - 'nexus.${DomainName}'
+              - DomainName: !ImportValue AccountHostName
+      ListenerArn: !ImportValue EcsPublicAlbHttpsListener
+      Priority: 1
+  ServiceScalingTarget:
+    Type: 'AWS::ApplicationAutoScaling::ScalableTarget'
+    Properties:
+      MaxCapacity: 1
+      MinCapacity: 1
+      ResourceId: !Sub
+        - 'service/${ECSCluster}/${ServiceName}'
+        - ServiceName: !GetAtt Service.Name
+          ECSCluster: !ImportValue EcsCluster
+      RoleARN: !ImportValue AutoscalingRole
+      ScalableDimension: 'ecs:service:DesiredCount'
+      ServiceNamespace: ecs
+  ServiceScalingPolicy:
+    Type: 'AWS::ApplicationAutoScaling::ScalingPolicy'
+    Properties:
+      PolicyName: AStepPolicy
+      PolicyType: StepScaling
+      ScalingTargetId: !Ref ServiceScalingTarget
+      StepScalingPolicyConfiguration:
+        AdjustmentType: PercentChangeInCapacity
+        Cooldown: 60
+        MetricAggregationType: Average
+        StepAdjustments:
+          - MetricIntervalLowerBound: 0
+            ScalingAdjustment: 200
+  ALB500sAlarmScaleUp:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      EvaluationPeriods: '1'
+      Statistic: Average
+      Threshold: '10'
+      AlarmDescription: Alarm if our ALB generates too many HTTP 500s.
+      Period: '60'
+      AlarmActions: [!Ref ServiceScalingPolicy]
+      Namespace: AWS/ApplicationALB
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !ImportValue EcsPublicAlbFullName
+      ComparisonOperator: GreaterThanThreshold
+      MetricName: HTTPCode_ELB_5XX_Count
+  RecordSet:
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      HostedZoneName: !Sub
+        - '${DomainName}.'
+        - DomainName: !ImportValue AccountHostName
+      Name: !Sub
+        - '${SubDomain}.${DomainName}'
+        - DomainName: !ImportValue AccountHostName
+      Type: A
+      AliasTarget:
+        DNSName: !ImportValue EcsPublicAlbDns
+        HostedZoneId: !ImportValue EcsPublicAlbHostedZoneID

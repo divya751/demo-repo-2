@@ -1,0 +1,10 @@
+{
+  "stackName": "InfrastructureBucket",
+  "parameters": {
+    "BucketName": "infrastructure-artifacts"
+  },
+  "tags": {
+    "CostCenter": "OpenFarm",
+    "SystemContext": "Platform"
+  }
+}

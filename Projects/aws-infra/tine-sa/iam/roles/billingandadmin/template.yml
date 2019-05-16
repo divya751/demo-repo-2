@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Creates admin and billing roles that members of the groups
+  (sandbox)/iamgHfAdmin and (sandbox)/iamgHfBilling can assume.
+Resources:
+  Admin:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: HusdyrfagAdmin
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: arn:aws:iam::751750612325:root
+            Action: sts:AssumeRole
+            Condition:
+              Bool:
+                aws:MultiFactorAuthPresent: 'true'
+  Billing:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: Billing
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/job-function/Billing
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: arn:aws:iam::751750612325:root
+            Action: sts:AssumeRole
+            Condition:
+              Bool:
+                aws:MultiFactorAuthPresent: 'true'

@@ -1,0 +1,59 @@
+{
+  "version": "0",
+  "id": "267451b4-bf56-c1d1-f79d-c09570ff2340",
+  "detail-type": "ECS Task State Change",
+  "source": "aws.ecs",
+  "account": "314237564965",
+  "time": "2018-02-07T08:40:41Z",
+  "region": "eu-west-1",
+  "resources": [
+    "arn:aws:ecs:eu-west-1:314237564965:task/6e24801f-d7ba-4898-bc88-1a7678677cec"
+  ],
+  "detail": {
+    "clusterArn": "arn:aws:ecs:eu-west-1:314237564965:cluster/Containers",
+    "containerInstanceArn": "arn:aws:ecs:eu-west-1:314237564965:container-instance/34166e7f-b853-49b7-a976-05b346470c71",
+    "containers": [
+      {
+        "containerArn": "arn:aws:ecs:eu-west-1:314237564965:container/f01e14ae-f2d2-4e5a-ae81-3ef4d7f2dcab",
+        "exitCode": 1,
+        "lastStatus": "STOPPED",
+        "name": "ncdx-mats-api",
+        "networkBindings": [
+          {
+            "bindIP": "0.0.0.0",
+            "containerPort": 8080,
+            "hostPort": 32876,
+            "protocol": "tcp"
+          }
+        ],
+        "taskArn": "arn:aws:ecs:eu-west-1:314237564965:task/6e24801f-d7ba-4898-bc88-1a7678677cec"
+      }
+    ],
+    "createdAt": "2018-02-07T08:40:23.441Z",
+    "launchType": "EC2",
+    "cpu": "128",
+    "memory": "64",
+    "desiredStatus": "STOPPED",
+    "group": "service:NcdxMatsApi-Service-6OOQ8Z1KL2GP",
+    "lastStatus": "STOPPED",
+    "overrides": {
+      "containerOverrides": [
+        {
+          "name": "ncdx-mats-api"
+        }
+      ]
+    },
+    "pullStartedAt": "2018-02-07T08:40:24.516Z",
+    "startedAt": "2018-02-07T08:40:25.516Z",
+    "startedBy": "ecs-svc/9223370518862713986",
+    "stoppingAt": "2018-02-07T08:40:41.717Z",
+    "stoppedAt": "2018-02-07T08:40:41.717Z",
+    "pullStoppedAt": "2018-02-07T08:40:25Z",
+    "executionStoppedAt": "2018-02-07T08:40:41Z",
+    "stoppedReason": "Essential container in task exited",
+    "updatedAt": "2018-02-07T08:40:41.717Z",
+    "taskArn": "arn:aws:ecs:eu-west-1:314237564965:task/6e24801f-d7ba-4898-bc88-1a7678677cec",
+    "taskDefinitionArn": "arn:aws:ecs:eu-west-1:314237564965:task-definition/NcdxMatsApi:22",
+    "version": 3
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "stackName": "ApiDomainName",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "parameters": {
+    "SubDomain": "api"
+  }
+}

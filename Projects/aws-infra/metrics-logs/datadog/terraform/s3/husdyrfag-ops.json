@@ -1,0 +1,10 @@
+{
+  "stackName": "DatadogTerraformState",
+  "parameters": {
+    "BucketName": "datadog-terraform-state"
+  },
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "stackName": "ApiDomainName",
+  "tags": {
+    "CostCenter": "OpenFarm",
+    "SystemContext": "Platform"
+  },
+  "parameters": {
+    "SubDomain": "api"
+  }
+}

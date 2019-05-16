@@ -1,0 +1,8 @@
+{
+  "stackName": "SystemUsers",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "opts": "--capabilities CAPABILITY_NAMED_IAM"
+}

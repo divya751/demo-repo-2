@@ -1,0 +1,10 @@
+{
+  "stackName": "SSLCertificate",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "parameters": {
+    "HostName": "husdyrfag-dev.io"
+  }
+}

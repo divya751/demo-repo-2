@@ -1,0 +1,15 @@
+init_config:
+
+instances:
+  [{}]
+
+logs:
+  - type: docker
+    label: no.tine.logging.source:java
+    source: java
+  - type: docker
+    label: no.tine.logging.source:node
+    source: nodejs
+  - type: docker
+    label: no.tine.logging.source:datomic-backup
+    source: database

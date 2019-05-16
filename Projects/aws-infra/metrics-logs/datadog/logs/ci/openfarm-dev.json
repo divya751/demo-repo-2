@@ -1,0 +1,12 @@
+{
+  "stackName": "DatadogLogs",
+  "parameters": {
+    "DatadogAPIKey": "3431d3e46cfd26a863934f5e9bc04565"
+  },
+  "tags": {
+    "CostCenter": "OpenFarm",
+    "SystemContext": "Platform"
+  },
+  "template": "../cf/template.yml",
+  "opts": "--capabilities CAPABILITY_NAMED_IAM"
+}

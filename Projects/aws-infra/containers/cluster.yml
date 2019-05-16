@@ -1,0 +1,229 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: ECS cluster
+
+Parameters:
+  KeyName:
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the ECS instances.
+  DesiredCapacity:
+    Type: Number
+    Description: Number of instances to launch in your ECS cluster.
+  MinSize:
+    Type: Number
+    Description: Minimum number of instances that can be launched in your ECS cluster.
+  MaxSize:
+    Type: Number
+    Description: Maximum number of instances that can be launched in your ECS cluster.
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    AllowedValues:
+      - t2.small
+      - t2.medium
+      - t2.large
+  ScaleUpPercent:
+    Type: Number
+  ScaleDownPercent:
+    Type: Number
+  EcsInstanceSecurityGroup:
+    Type: String
+    Description: Resource name of ECS EC2 instance security group
+  FileSystem:
+    Type: String
+    Description: Resource name for EFS file system
+
+Mappings:
+  AWSRegionToAMI:
+    eu-west-1:
+      AMIID: ami-a1491ad2
+    eu-central-1:
+      AMIID: ami-54f5303b
+
+Resources:
+  Cluster:
+    Type: 'AWS::ECS::Cluster'
+    Properties:
+      ClusterName: Containers
+  EcsInstanceSecurityGroupSSHinbound:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref EcsInstanceSecurityGroup
+      IpProtocol: tcp
+      FromPort: '22'
+      ToPort: '22'
+      CidrIp: !ImportValue VPCCidrBlock
+  EcsInstanceSecurityGroupALBports:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref EcsInstanceSecurityGroup
+      IpProtocol: tcp
+      FromPort: '31000'
+      ToPort: '61000'
+      CidrIp: !ImportValue VPCCidrBlock
+  ECSAutoScalingGroup:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      VPCZoneIdentifier:
+        - !ImportValue PrivateSubnetAZA
+        - !ImportValue PrivateSubnetAZB
+        - !ImportValue PrivateSubnetAZC
+      LaunchConfigurationName: !Ref ContainerInstances
+      MinSize: !Ref MinSize
+      MaxSize: !Ref MaxSize
+      DesiredCapacity: !Ref DesiredCapacity
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    UpdatePolicy:
+      AutoScalingReplacingUpdate:
+        WillReplace: 'true'
+  ScaleUpPolicy:
+    Type: 'AWS::AutoScaling::ScalingPolicy'
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref ECSAutoScalingGroup
+      Cooldown: 300
+      PolicyType: SimpleScaling
+      ScalingAdjustment: 1
+  CpuReservationHighAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      EvaluationPeriods: '1'
+      Statistic: Maximum
+      Threshold: !Ref ScaleUpPercent
+      AlarmDescription: Alarm when too much CPU has been reserved
+      Period: '60'
+      AlarmActions:
+        - !Ref ScaleUpPolicy
+      Namespace: AWS/ECS
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref Cluster
+      ComparisonOperator: GreaterThanThreshold
+      MetricName: CPUReservation
+  MemoryReservationHighAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      EvaluationPeriods: '1'
+      Statistic: Maximum
+      Threshold: !Ref ScaleUpPercent
+      AlarmDescription: Alarm when too much memory has been reserved
+      Period: '60'
+      AlarmActions:
+        - !Ref ScaleUpPolicy
+      Namespace: AWS/ECS
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref Cluster
+      ComparisonOperator: GreaterThanThreshold
+      MetricName: CPUReservation
+  ScaleDownPolicy:
+    Type: 'AWS::AutoScaling::ScalingPolicy'
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref ECSAutoScalingGroup
+      Cooldown: 300
+      PolicyType: SimpleScaling
+      ScalingAdjustment: -1
+  CpuReservationLowAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      EvaluationPeriods: '1'
+      Statistic: Minimum
+      Threshold: !Ref ScaleDownPercent
+      AlarmDescription: Alarm when CPU reservations are low
+      Period: '60'
+      AlarmActions:
+        - !Ref ScaleDownPolicy
+      Namespace: AWS/ECS
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref Cluster
+      ComparisonOperator: LessThanThreshold
+      MetricName: CPUReservation
+  MemoryReservationLowAlarm:
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      EvaluationPeriods: '1'
+      Statistic: Maximum
+      Threshold: !Ref ScaleDownPercent
+      AlarmDescription: Alarm when memory reservations are low
+      Period: '60'
+      AlarmActions:
+        - !Ref ScaleDownPolicy
+      Namespace: AWS/ECS
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref Cluster
+      ComparisonOperator: LessThanThreshold
+      MetricName: CPUReservation
+  ContainerInstances:
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+    Metadata:
+      'AWS::CloudFormation::Authentication':
+        S3AccessCreds:
+          type: S3
+          roleName: !ImportValue EC2Role
+          buckets:
+            - !ImportValue InfrastructureBucketName
+      AWS::CloudFormation::Init:
+        config:
+          files:
+            /nginx/nginx.conf:
+              content: >
+                server {
+                    listen 80 default_server;
+                    listen [::]:80 default_server;
+                    server_name _;
+                    location = /health {
+                      return 204;
+                    }
+                    location / {
+                      return 301 https://$host$request_uri;
+                    }
+                }
+            /opt/datadog-agent/conf.d/datadog-agent.yaml:
+                source: !Sub
+                  - 'https://${BucketName}.s3.amazonaws.com/datadog-agent/datadog-agent.yaml'
+                  - BucketName: !ImportValue InfrastructureBucketName
+                mode: '000640'
+                owner: root
+                group: root
+                authentication: S3AccessCreds
+    Properties:
+      ImageId: !FindInMap [AWSRegionToAMI, !Ref 'AWS::Region', AMIID]
+      SecurityGroups:
+        - !Ref EcsInstanceSecurityGroup
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !ImportValue EC2InstanceProfile
+      KeyName: !Ref KeyName
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          exec > >(tee /var/log/userdata.log | logger -t userdata -s 2>/dev/stdout) 2>&1
+          echo "*        soft    nofile    16384" >> /etc/security/limits.conf
+          echo "*        hard    nofile    65536" >> /etc/security/limits.conf
+          echo ECS_CLUSTER=${Cluster} >> /etc/ecs/ecs.config
+          yum install -y aws-cfn-bootstrap nfs-utils
+          mkdir /mnt/efs
+          mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${FileSystem}.efs.${AWS::Region}.amazonaws.com:/ /mnt/efs
+          mkdir -p /mnt/efs/nexus-data
+          chmod a+w /mnt/efs/nexus-data
+          mkdir -p /mnt/efs/sonarqube-data
+          chmod a+w /mnt/efs/sonarqube-data
+          mkdir -p /opt/datadog-agent/conf.d
+          chmod a+w /opt/datadog-agent/conf.d
+          task_def="datadog-agent"
+          start ecs
+          yum install -y aws-cli jq
+          instance_arn=$(curl -s http://localhost:51678/v1/metadata | jq -r '. | .ContainerInstanceArn' | cut -d/ -f2 )
+          az=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)
+          region=$(echo $az | sed 's/.$//')
+          echo "cluster=${Cluster} az=$az region=$region aws ecs start-task --cluster \
+          ${Cluster} --task-definition $task_def --container-instances $instance_arn --region $region" >> /etc/rc.local
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource ContainerInstances --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ECSAutoScalingGroup --region ${AWS::Region}
+
+Outputs:
+  Cluster:
+    Value: !Ref Cluster

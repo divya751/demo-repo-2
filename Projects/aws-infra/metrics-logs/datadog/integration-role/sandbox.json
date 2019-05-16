@@ -1,0 +1,12 @@
+{
+  "stackName": "cfsSandboxDatadog",
+  "parameters": {
+    "ExternalID": "487313658a2549049d8e64595fff0868"
+  },
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "opts": "--capabilities CAPABILITY_NAMED_IAM",
+  "environment": "Sandbox"
+}

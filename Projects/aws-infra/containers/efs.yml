@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: EFS file system
+
+Parameters:
+  EcsInstanceSecurityGroup:
+    Type: String
+    Description: Resource name of ECS EC2 instance security group
+
+Resources:
+  SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Allow ECS instances to use the EFS share
+      VpcId: !ImportValue VPC
+  NfsSecurityGroupIngress:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: '2049'
+      ToPort: '2049'
+      SourceSecurityGroupId: !Ref EcsInstanceSecurityGroup
+  EcsFileSystem:
+    Type: 'AWS::EFS::FileSystem'
+    Properties:
+      Encrypted: false
+  MountTargetA:
+    Type: 'AWS::EFS::MountTarget'
+    Properties:
+      FileSystemId: !Ref EcsFileSystem
+      SecurityGroups:
+        - !Ref SecurityGroup
+      SubnetId: !ImportValue PrivateSubnetAZA
+  MountTargetB:
+    Type: 'AWS::EFS::MountTarget'
+    Properties:
+      FileSystemId: !Ref EcsFileSystem
+      SecurityGroups:
+        - !Ref SecurityGroup
+      SubnetId: !ImportValue PrivateSubnetAZB
+  MountTargetC:
+    Type: 'AWS::EFS::MountTarget'
+    Properties:
+      FileSystemId: !Ref EcsFileSystem
+      SecurityGroups:
+        - !Ref SecurityGroup
+      SubnetId: !ImportValue PrivateSubnetAZC
+
+Outputs:
+  FileSystem:
+    Value: !Ref EcsFileSystem

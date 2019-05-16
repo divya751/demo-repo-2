@@ -1,0 +1,143 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Public internet-facing load balancer
+
+Parameters:
+  Cluster:
+    Type: String
+    Description: Resource name of the cluster in which to run the SSL redirecter service
+  DeregistrationDelay:
+    Type: String
+
+Resources:
+  SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: ECS load balancer security group
+      VpcId: !ImportValue VPC
+  InboundHTTP:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: '80'
+      ToPort: '80'
+      CidrIp: 0.0.0.0/0
+  InboundHTTPS:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: '443'
+      ToPort: '443'
+      CidrIp: 0.0.0.0/0
+  LoadBalancer:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Name: PublicApps
+      Scheme: internet-facing
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: '30'
+      Subnets:
+        - !ImportValue PublicSubnetAZA
+        - !ImportValue PublicSubnetAZB
+        - !ImportValue PublicSubnetAZC
+      SecurityGroups:
+        - !Ref SecurityGroup
+  RedirecterTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      Name: Redirecter
+      Port: '80'
+      Protocol: HTTP
+      HealthCheckIntervalSeconds: 5
+      HealthCheckPath: /health
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 2
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: 200-399
+      VpcId: !ImportValue VPC
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: !Ref DeregistrationDelay
+  DefaultTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      Name: Default
+      Port: '80'
+      Protocol: HTTP
+      VpcId: !ImportValue VPC
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: !Ref DeregistrationDelay
+  HTTPListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref RedirecterTargetGroup
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: '80'
+      Protocol: HTTP
+  HTTPSListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref DefaultTargetGroup
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: '443'
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !ImportValue SSLCertificate
+  RedirecterTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      Family: 'ssl-redirect'
+      Volumes:
+        - Name: nginx-config
+          Host:
+            SourcePath: /nginx/nginx.conf
+      ContainerDefinitions:
+        - Name: ssl-redirecter
+          Cpu: 128
+          Essential: true
+          Image: nginx:1.13.6
+          Memory: 128
+          PortMappings:
+            - ContainerPort: '80'
+              HostPort: '0'
+          MountPoints:
+            - ContainerPath: /etc/nginx/conf.d/ssl-redirecter.conf
+              SourceVolume: nginx-config
+              ReadOnly: true
+  RedirecterService:
+    Type: 'AWS::ECS::Service'
+    DependsOn: HTTPSListener
+    Properties:
+      Cluster: !Ref Cluster
+      DesiredCount: '1'
+      LoadBalancers:
+        - ContainerName: ssl-redirecter
+          ContainerPort: '80'
+          TargetGroupArn: !Ref RedirecterTargetGroup
+      Role: !ImportValue ECSServiceRole
+      TaskDefinition: !Ref RedirecterTaskDefinition
+
+Outputs:
+  LoadBalancer:
+    Description: The internet-facing ALB ARN
+    Value: !Ref LoadBalancer
+  LoadBalancerDNS:
+    Description: The internal ALB DNS URL
+    Value: !GetAtt LoadBalancer.DNSName
+  LoadBalancerHostedZoneId:
+    Value: !GetAtt LoadBalancer.CanonicalHostedZoneID
+  LoadBalancerFullName:
+    Value: !GetAtt LoadBalancer.LoadBalancerFullName
+  LoadBalancerHTTPListener:
+    Value: !Ref HTTPListener
+  LoadBalancerHTTPSListener:
+    Value: !Ref HTTPSListener

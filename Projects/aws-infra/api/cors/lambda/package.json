@@ -1,0 +1,17 @@
+{
+  "name": "whitelist-cors",
+  "version": "1.0.0",
+  "description": "A lambda function to use as a CORS domain whitelist",
+  "main": "src/whitelist-cors.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "author": "Christian Johansen (christian@kodemaker.no)",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^21.2.1"
+  }
+}

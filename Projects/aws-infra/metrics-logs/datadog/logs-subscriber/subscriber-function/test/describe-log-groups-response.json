@@ -1,0 +1,204 @@
+{
+  "logGroups": [
+    {
+      "logGroupName": "/aws/lambda/AliasLookup",
+      "creationTime": 1519376958519,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/AliasLookup:*",
+      "storedBytes": 14417
+    },
+    {
+      "logGroupName": "/aws/lambda/AliasWriter",
+      "creationTime": 1519372169810,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/AliasWriter:*",
+      "storedBytes": 13917
+    },
+    {
+      "logGroupName": "/aws/lambda/DatadogLogs-SubscriberFunction-1I1QBVTJLV5UF",
+      "creationTime": 1521819009460,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/DatadogLogs-SubscriberFunction-1I1QBVTJLV5UF:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/aws/lambda/DatomicBackupRestore-DatomicBackupRestore-1L9LFH8GLAA9L",
+      "creationTime": 1522823745590,
+      "retentionInDays": 7,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/DatomicBackupRestore-DatomicBackupRestore-1L9LFH8GLAA9L:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/aws/lambda/DatomicBackupRestore-DatomicBackupRestore-1P03NGQO4JUI5",
+      "creationTime": 1521635740671,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/DatomicBackupRestore-DatomicBackupRestore-1P03NGQO4JUI5:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/aws/lambda/DatomicBackupRestore-DatomicBackupRestore-OC5GOGP3PBEV",
+      "creationTime": 1521660001143,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/DatomicBackupRestore-DatomicBackupRestore-OC5GOGP3PBEV:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/aws/lambda/DatomicBackupRestore-StackTermination-XRBVDTM6BZT8",
+      "creationTime": 1521619309435,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/DatomicBackupRestore-StackTermination-XRBVDTM6BZT8:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/aws/lambda/IdLookup",
+      "creationTime": 1519385022689,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/IdLookup:*",
+      "storedBytes": 25887
+    },
+    {
+      "logGroupName": "/aws/lambda/MilkDelivery-DataReceiveStack-22TFK-LambdaFunction-U0709RTV7TQQ",
+      "creationTime": 1520521524384,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/MilkDelivery-DataReceiveStack-22TFK-LambdaFunction-U0709RTV7TQQ:*",
+      "storedBytes": 2122
+    },
+    {
+      "logGroupName": "/aws/lambda/MilkDelivery-DataReceiveStack-3EQSV-LambdaFunction-1IMIBG6R4KBSE",
+      "creationTime": 1521450755379,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/MilkDelivery-DataReceiveStack-3EQSV-LambdaFunction-1IMIBG6R4KBSE:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/aws/lambda/MilkDelivery-DataReceiveStack-8ALO0-LambdaFunction-POTAQ45OQUPH",
+      "creationTime": 1521195575569,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/MilkDelivery-DataReceiveStack-8ALO0-LambdaFunction-POTAQ45OQUPH:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/aws/lambda/MilkDeliveryCommandMapFunction",
+      "creationTime": 1521450570431,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/MilkDeliveryCommandMapFunction:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/aws/lambda/MilkDeliveryFunction",
+      "creationTime": 1521450570934,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/MilkDeliveryFunction:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/aws/lambda/MilkQuality-DataReceiveStack-W5VFC5-LambdaFunction-1SVSCSGORHVOZ",
+      "creationTime": 1521199176702,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/MilkQuality-DataReceiveStack-W5VFC5-LambdaFunction-1SVSCSGORHVOZ:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/aws/lambda/MilkQuality-DataReceiveStack-Y0ZDQW-LambdaFunction-1EGRRCK12M8T3",
+      "creationTime": 1520510177251,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/MilkQuality-DataReceiveStack-Y0ZDQW-LambdaFunction-1EGRRCK12M8T3:*",
+      "storedBytes": 8755
+    },
+    {
+      "logGroupName": "/aws/lambda/MilkQualityCommandMapFunction",
+      "creationTime": 1521194508344,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/MilkQualityCommandMapFunction:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/aws/lambda/MilkQualityFunction",
+      "creationTime": 1521194508750,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/MilkQualityFunction:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/aws/lambda/ProducerSDBQueueConsumer",
+      "creationTime": 1521011050661,
+      "retentionInDays": 7,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/ProducerSDBQueueConsumer:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/aws/lambda/RollbackStack",
+      "creationTime": 1520167792944,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/RollbackStack:*",
+      "storedBytes": 259183
+    },
+    {
+      "logGroupName": "/aws/lambda/TerminateOverdueStacks",
+      "creationTime": 1520452624710,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/TerminateOverdueStacks:*",
+      "storedBytes": 26212
+    },
+    {
+      "logGroupName": "/aws/lambda/WriteDeliveryToDynamoFunction",
+      "creationTime": 1521450542454,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/WriteDeliveryToDynamoFunction:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/aws/lambda/WriteQualityToDynamoFunction",
+      "creationTime": 1521194481463,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/WriteQualityToDynamoFunction:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/aws/lambda/milkbringer-get-milk-delivery",
+      "creationTime": 1522138439583,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/milkbringer-get-milk-delivery:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/aws/lambda/milkbringer-get-milk-quality",
+      "creationTime": 1522141715178,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/milkbringer-get-milk-quality:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/aws/lambda/vertx-serverless-test-dev-hello",
+      "creationTime": 1522841537380,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/aws/lambda/vertx-serverless-test-dev-hello:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/datomic/backup",
+      "creationTime": 1522823680701,
+      "retentionInDays": 7,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/datomic/backup:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "/datomic/restore",
+      "creationTime": 1522823680544,
+      "retentionInDays": 7,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:/datomic/restore:*",
+      "storedBytes": 0
+    },
+    {
+      "logGroupName": "my-logs",
+      "creationTime": 1521888677414,
+      "metricFilterCount": 0,
+      "arn": "arn:aws:logs:eu-west-1:925832396712:log-group:my-logs:*",
+      "storedBytes": 0
+    }
+  ]
+}

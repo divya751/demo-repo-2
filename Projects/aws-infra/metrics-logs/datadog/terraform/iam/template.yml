@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Datadog Terraform user with only access to S3 state bucket
+
+Resources:
+  DatadogTerraformUser:
+    Type: 'AWS::IAM::User'
+    Properties:
+      Path: /users/
+      Policies:
+        - PolicyName: AccessToDatadogTerraformStateBucket
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !ImportValue DatadogTerraformStateBucketArn
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: !Sub
+                  - '${BucketArn}/*'
+                  - BucketArn: !ImportValue DatadogTerraformStateBucketArn
+      UserName: DatadogTerraform

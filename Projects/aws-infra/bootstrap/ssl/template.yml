@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: SSL certificate
+
+Parameters:
+  HostName:
+    Type: String
+
+Resources:
+  SSLCertificate:
+    Type: 'AWS::CertificateManager::Certificate'
+    Properties:
+      DomainName: !Sub '*.${HostName}'
+      DomainValidationOptions:
+        - DomainName: !Sub '*.${HostName}'
+          ValidationDomain: !Ref HostName
+
+Outputs:
+  Certificate:
+    Description: 'Certificate ARN'
+    Value: !Ref SSLCertificate
+    Export:
+      Name: SSLCertificate

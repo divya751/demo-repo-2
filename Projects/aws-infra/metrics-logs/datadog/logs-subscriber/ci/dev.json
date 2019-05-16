@@ -1,0 +1,9 @@
+{
+  "stackName": "DatadogLogsSubscriber",
+  "tags": {
+    "CostCenter": "Openfarm",
+    "SystemContext": "Platform"
+  },
+  "template": "../cf/template.yml",
+  "opts": "--capabilities CAPABILITY_NAMED_IAM"
+}

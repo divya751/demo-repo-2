@@ -1,0 +1,121 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Pact broker
+
+Parameters:
+  SubDomain:
+    Type: String
+  DbUser:
+    Type: String
+  DbPassword:
+    Type: String
+    NoEcho: true
+  DbName:
+    Type: String
+  Port:
+    Type: String
+    Default: 80
+  BasicAuthUser:
+    Type: String
+  BasicAuthPassword:
+    Type: String
+    NoEcho: true
+
+Resources:
+  Database:
+    Type: 'AWS::CloudFormation::Stack'
+    Properties:
+      TemplateURL: ../postgres.yml
+      Parameters:
+        DbUser: !Ref DbUser
+        DbPassword: !Ref DbPassword
+        DbName: !Ref DbName
+
+  TaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      ContainerDefinitions:
+        - Cpu: 256
+          Environment:
+            - Name: PACT_BROKER_DATABASE_ADAPTER
+              Value: postgres
+            - Name: PACT_BROKER_DATABASE_USERNAME
+              Value: !Ref DbUser
+            - Name: PACT_BROKER_DATABASE_PASSWORD
+              Value: !Ref DbPassword
+            - Name: PACT_BROKER_DATABASE_HOST
+              Value: !GetAtt Database.Outputs.EndpointAddress
+            - Name: PACT_BROKER_DATABASE_NAME
+              Value: !Ref DbName
+            - Name: PACT_BROKER_BASIC_AUTH_USERNAME
+              Value: !Ref BasicAuthUser
+            - Name: PACT_BROKER_BASIC_AUTH_PASSWORD
+              Value: !Ref BasicAuthPassword
+            - Name: PACT_BROKER_PUBLIC_HEARTBEAT
+              Value: true
+          Essential: true
+          Image: dius/pact-broker:2.16.1-3
+          Memory: 1024
+          MemoryReservation: 128
+          Name: pact-broker
+          PortMappings:
+            - ContainerPort: !Ref Port
+              HostPort: '0'
+      Family: PactBroker
+
+  TargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /diagnostic/status/heartbeat
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      Port: !Ref Port
+      Protocol: HTTP
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '20'
+      UnhealthyThresholdCount: 3
+      VpcId: !ImportValue VPC
+
+  Service:
+    Type: 'AWS::ECS::Service'
+    DependsOn: ListenerRule
+    Properties:
+      Cluster: !ImportValue EcsCluster
+      DesiredCount: 1
+      LoadBalancers:
+        - ContainerName: pact-broker
+          ContainerPort: !Ref Port
+          TargetGroupArn: !Ref TargetGroup
+      Role: !ImportValue ECSServiceRole
+      TaskDefinition: !Ref TaskDefinition
+
+  ListenerRule:
+    Type: 'AWS::ElasticLoadBalancingV2::ListenerRule'
+    Properties:
+      Actions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
+      Conditions:
+        - Field: host-header
+          Values:
+            - !Sub
+              - '${SubDomain}.${DomainName}'
+              - DomainName: !ImportValue AccountHostName
+      ListenerArn: !ImportValue EcsPublicAlbHttpsListener
+      Priority: 2
+
+  RecordSet:
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      AliasTarget:
+        DNSName: !ImportValue EcsPublicAlbDns
+        HostedZoneId: !ImportValue EcsPublicAlbHostedZoneID
+      HostedZoneName: !Sub
+        - '${DomainName}.'
+        - DomainName: !ImportValue AccountHostName
+      Name: !Sub
+        - '${SubDomain}.${DomainName}'
+        - DomainName: !ImportValue AccountHostName
+      Type: A

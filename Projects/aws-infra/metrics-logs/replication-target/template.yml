@@ -1,0 +1,648 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: 'AWS::Serverless-2016-10-31'
+
+Parameters:
+  BackupAccountId:
+    Type: String
+  LogBucketName:
+    Type: String
+  FirehoseBucketName:
+    Type: String
+
+Resources:
+  s3bCttLogs:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref LogBucketName
+      VersioningConfiguration:
+        Status: Enabled
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: 's3:ObjectCreated:*'
+            Function: !GetAtt lfS3bCttKfds.Arn
+      LifecycleConfiguration:
+        Rules:
+          - Status: Enabled
+            ExpirationInDays: 30
+            NoncurrentVersionExpirationInDays: 30
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+    DependsOn: 'lpS3bCttKfds'
+  s3bpCttLogs:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref s3bCttLogs
+      PolicyDocument:
+        Version: 2008-10-17
+        Id: S3-Console-Replication-Policy
+        Statement:
+          - Sid: S3ReplicationPolicyStmt1
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${BackupAccountId}:root'
+            Action:
+              - 's3:GetBucketVersioning'
+              - 's3:PutBucketVersioning'
+              - 's3:ReplicateObject'
+              - 's3:ReplicateDelete'
+            Resource:
+              - !Sub 'arn:aws:s3:::${LogBucketName}'
+              - !Sub 'arn:aws:s3:::${LogBucketName}/*'
+  lfS3bCttKfds:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Description: Copies ctt logs to kfds and ks
+      FunctionName: lfS3bCttLogs
+      Handler: cloudtrail-to-kinesis.handler
+      MemorySize: 128
+      Role: !GetAtt iamrLfS3bCttKfds.Arn
+      Runtime: nodejs6.10
+      Timeout: 10
+      TracingConfig:
+        Mode: PassThrough
+  iamrLfS3bCttKfds:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: iamrLfS3bCttKfds
+      Path: /service-role/
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonS3FullAccess'
+        - 'arn:aws:iam::aws:policy/CloudWatchLogsFullAccess'
+        - !Ref iammpLfS3bCttKfds
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+  iammpLfS3bCttKfds:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: iammpLfS3bCttKfds
+      Path: /service-policy/
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'logs:CreateLogStream'
+              - 'logs:PutLogEvents'
+            Resource:
+              - !GetAtt
+                - llgS3bCttLogs
+                - Arn
+          - Effect: Allow
+            Action:
+              - 'kinesis:PutRecord'
+            Resource:
+              - !GetAtt
+                - ksLogs
+                - Arn
+  llgS3bCttLogs:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: /aws/lambda/s3bCttLogs
+      RetentionInDays: 3
+  lpS3bCttKfds:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref lfS3bCttKfds
+      Principal: s3.amazonaws.com
+      SourceAccount: !Sub '${AWS::AccountId}'
+  ksLogs:
+    Type: 'AWS::Kinesis::Stream'
+    Properties:
+      Name: ksLogs
+      ShardCount: 1
+      RetentionPeriodHours: 24
+  iamrKfdsCttLogs:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: firehose.amazonaws.com
+            Action: 'sts:AssumeRole'
+      RoleName: iamrKfdsCttLogs
+      Path: /service-role/
+      ManagedPolicyArns:
+        - !Ref iammpKfdsCttLogs
+  iammpKfdsCttLogs:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: 'iammpKfdsCttLogs'
+      Path: '/service-policy/'
+      Description: 'Used by kinesis firehose to access kinesis stream'
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Action: 'kinesis:*'
+          Effect: 'Allow'
+          Resource: !GetAtt ksLogs.Arn
+  kfdsCttLogs:
+    Type: 'AWS::KinesisFirehose::DeliveryStream'
+    Properties:
+      DeliveryStreamName: kfdsCttLogs
+      DeliveryStreamType: KinesisStreamAsSource
+      KinesisStreamSourceConfiguration:
+        KinesisStreamARN: !GetAtt ksLogs.Arn
+        RoleARN: !GetAtt iamrKfdsCttLogs.Arn
+      ElasticsearchDestinationConfiguration:
+        CloudWatchLoggingOptions:
+          Enabled: 'true'
+          LogGroupName: !Ref llgKfdsCttLogs
+          LogStreamName: !Ref llsKfdsCttLogs
+        BufferingHints:
+          IntervalInSeconds: 300
+          SizeInMBs: 5
+        DomainARN: !GetAtt
+          - edLog
+          - DomainArn
+        IndexName: logs-cloudtrail
+        IndexRotationPeriod: NoRotation
+        RetryOptions:
+          DurationInSeconds: 300
+        RoleARN: !GetAtt
+          - iamrKfdsLogsExecution
+          - Arn
+        S3BackupMode: AllDocuments
+        TypeName: lambda
+        S3Configuration:
+          RoleARN: !GetAtt
+            - iamrKfdsLogsMove
+            - Arn
+          BucketARN: !GetAtt
+            - s3bLogs
+            - Arn
+          Prefix: kfdsCttLogs/
+          BufferingHints:
+            SizeInMBs: 5
+            IntervalInSeconds: 60
+          CompressionFormat: UNCOMPRESSED
+          CloudWatchLoggingOptions:
+            Enabled: true
+            LogGroupName: !Ref llgKfdsCttLogs
+            LogStreamName: !Ref llsKfdsCttS3Logs
+          EncryptionConfiguration:
+            NoEncryptionConfig: NoEncryption
+  iamrKfdsLogsExecution:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: firehose.amazonaws.com
+            Action: 'sts:AssumeRole'
+      RoleName: iamrKfdsLogsExecution
+      Path: /service-role/
+      ManagedPolicyArns:
+        - !Ref iammpKfdsLogsExecution
+  iammpKfdsLogsExecution:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Path: /service-policy/
+      ManagedPolicyName: iammpKfdsLogsExecution
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Action:
+              - 's3:AbortMultipartUpload'
+              - 's3:GetBucketLocation'
+              - 's3:GetObject'
+              - 's3:ListBucket'
+              - 's3:ListBucketMultipartUploads'
+              - 's3:PutObject'
+            Resource:
+              - !GetAtt
+                - s3bCttLogs
+                - Arn
+              - !Join
+                - ''
+                - - !GetAtt
+                    - s3bCttLogs
+                    - Arn
+                  - /*
+          - Sid: ''
+            Effect: Allow
+            Action:
+              - 'lambda:InvokeFunction'
+              - 'lambda:GetFunctionConfiguration'
+            Resource: !Sub 'arn:aws:lambda:eu-west-1:${AWS::AccountId}:function:%FIREHOSE_DEFAULT_FUNCTION%:%FIREHOSE_DEFAULT_VERSION%'
+          - Sid: ''
+            Effect: Allow
+            Action:
+              - 'es:*'
+            Resource:
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/*'
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/*/*'
+          - Sid: ''
+            Effect: Allow
+            Action:
+              - 'logs:PutLogEvents'
+            Resource:
+              - !Sub 'arn:aws:logs:eu-west-1:${AWS::AccountId}:log-group:/aws/kinesisfirehose/:log-stream:*'
+          - Sid: ''
+            Effect: Allow
+            Action:
+              - 'kinesis:DescribeStream'
+              - 'kinesis:GetShardIterator'
+              - 'kinesis:GetRecords'
+            Resource: !Sub 'arn:aws:kinesis:eu-west-1:${AWS::AccountId}:stream/ksLogs'
+  iamrKfdsLogsMove:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: iamrKfdsLogsMove
+      ManagedPolicyArns:
+        - !Ref iammpKfdsLogsMove
+      Path: /service-role/
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: firehose.amazonaws.com
+            Action: 'sts:AssumeRole'
+  iammpKfdsLogsMove:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Action:
+              - 's3:AbortMultipartUpload'
+              - 's3:GetBucketLocation'
+              - 's3:GetObject'
+              - 's3:ListBucket'
+              - 's3:ListBucketMultipartUploads'
+              - 's3:PutObject'
+            Resource:
+              - !GetAtt
+                - s3bLogs
+                - Arn
+              - !Join
+                - ''
+                - - !GetAtt
+                    - s3bLogs
+                    - Arn
+                  - /*
+          - Sid: ''
+            Effect: Allow
+            Action:
+              - 'lambda:InvokeFunction'
+              - 'lambda:GetFunctionConfiguration'
+            Resource: !Sub 'arn:aws:lambda:eu-west-1:${AWS::AccountId}:function:%FIREHOSE_DEFAULT_FUNCTION%:%FIREHOSE_DEFAULT_VERSION%'
+          - Sid: ''
+            Effect: Allow
+            Action:
+              - 'es:DescribeElasticsearchDomain'
+              - 'es:DescribeElasticsearchDomains'
+              - 'es:DescribeElasticsearchDomainConfig'
+              - 'es:ESHttpPost'
+              - 'es:ESHttpPut'
+            Resource:
+              - !Join
+                - ''
+                - - !GetAtt
+                    - edLog
+                    - DomainArn
+                  - /
+              - !Join
+                - ''
+                - - !GetAtt
+                    - edLog
+                    - DomainArn
+                  - /*
+          - Sid: ''
+            Effect: Allow
+            Action:
+              - 'es:ESHttpGet'
+            Resource:
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/edlogs/_all/_settings'
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/edlogs/_cluster/stats'
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/edlogs/logs*/_mapping/logs'
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/edlogs/_nodes'
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/edlogs/_nodes/stats'
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/edlogs/_nodes/*/stats'
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/edlogs/_stats'
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/edlogs/logs*/_stats'
+          - Sid: ''
+            Effect: Allow
+            Action:
+              - 'logs:PutLogEvents'
+            Resource:
+              - !Sub 'arn:aws:logs:eu-west-1:${AWS::AccountId}:log-group:/aws/kinesisfirehose/kfdsLogs:log-stream:*'
+          - Sid: ''
+            Effect: Allow
+            Action:
+              - 'kinesis:DescribeStream'
+              - 'kinesis:GetShardIterator'
+              - 'kinesis:GetRecords'
+            Resource: !Sub 'arn:aws:kinesis:eu-west-1:${AWS::AccountId}:stream/ksLogs'
+
+  edLog:
+    Type: 'AWS::Elasticsearch::Domain'
+    Properties:
+      DomainName: edlog
+      ElasticsearchClusterConfig:
+        DedicatedMasterCount: 2
+        DedicatedMasterEnabled: true
+        DedicatedMasterType: t2.small.elasticsearch
+        InstanceCount: 4
+        InstanceType: t2.small.elasticsearch
+        ZoneAwarenessEnabled: true
+      EBSOptions:
+        EBSEnabled: true
+        Iops: 0
+        VolumeSize: 20
+        VolumeType: gp2
+      SnapshotOptions:
+        AutomatedSnapshotStartHour: 0
+      AdvancedOptions:
+        rest.action.multi.allow_explicit_index: 'true'
+      ElasticsearchVersion: '5.5'
+      AccessPolicies:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: '*'
+            Action: 'es:*'
+            Resource: '*'
+  llgKfdsCttLogs:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: /aws/kinesisfirehose/
+      RetentionInDays: '3'
+  llsKfdsCttLogs:
+    Type: 'AWS::Logs::LogStream'
+    Properties:
+      LogStreamName: llsKfdsCttLogs
+      LogGroupName: !Ref llgKfdsCttLogs
+  llsKfdsCwLogs:
+    Type: 'AWS::Logs::LogStream'
+    Properties:
+      LogStreamName: llsKfdsCwLogs
+      LogGroupName: !Ref llgKfdsCttLogs
+  s3bLogs:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref FirehoseBucketName
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 30
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 30
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+  ksCwLogs:
+    Type: 'AWS::Kinesis::Stream'
+    Properties:
+      Name: lsCwLogs
+      RetentionPeriodHours: 24
+      ShardCount: 1
+  kfdsCwLogs:
+    Type: 'AWS::KinesisFirehose::DeliveryStream'
+    Properties:
+      DeliveryStreamName: kfdsCwLogs
+      DeliveryStreamType: KinesisStreamAsSource
+      KinesisStreamSourceConfiguration:
+        KinesisStreamARN: !GetAtt
+          - ksCwLogs
+          - Arn
+        RoleARN: !GetAtt
+          - iamrKfdsCwLogs
+          - Arn
+      ElasticsearchDestinationConfiguration:
+        CloudWatchLoggingOptions:
+          Enabled: 'true'
+          LogGroupName: !Ref llgKfdsCttLogs
+          LogStreamName: !Ref llsKfdsCwLogs
+        BufferingHints:
+          IntervalInSeconds: 300
+          SizeInMBs: 5
+        DomainARN: !GetAtt
+          - edLog
+          - DomainArn
+        IndexName: logs-cloudwatch
+        IndexRotationPeriod: NoRotation
+        RetryOptions:
+          DurationInSeconds: 300
+        RoleARN: !GetAtt
+          - iamrKfdsCwLogsExecution
+          - Arn
+        S3BackupMode: AllDocuments
+        TypeName: lambda
+        S3Configuration:
+          RoleARN: !GetAtt
+            - iamrKfdsLogsMove
+            - Arn
+          BucketARN: !GetAtt
+            - s3bLogs
+            - Arn
+          Prefix: kfdsCwLogs/
+          BufferingHints:
+            SizeInMBs: 5
+            IntervalInSeconds: 60
+          CompressionFormat: UNCOMPRESSED
+          CloudWatchLoggingOptions:
+            Enabled: true
+            LogGroupName: !Ref llgKfdsCttLogs
+            LogStreamName: !Ref llsKfdsCwS3Logs
+          EncryptionConfiguration:
+            NoEncryptionConfig: NoEncryption
+        ProcessingConfiguration:
+          Enabled: 'true'
+          Processors:
+            - Parameters:
+                - ParameterName: LambdaArn
+                  ParameterValue: !GetAtt
+                    - lfKfdsCwLogsTransformer
+                    - Arn
+              Type: Lambda
+  iamrKfdsCwLogs:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: iamrKfdsCwLogs
+      Path: /service-role/
+      ManagedPolicyArns:
+        - !Ref iammpKfdsCwLogs
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: firehose.amazonaws.com
+            Action: 'sts:AssumeRole'
+  iammpKfdsCwLogs:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      ManagedPolicyName: iammpKfdsCwLogs
+      Path: /service-policy/
+      Description: Used by kfdsCwLogs to access ksCwLogs
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: Stmt1507724298406
+            Action: 'kinesis:*'
+            Effect: Allow
+            Resource: !GetAtt
+              - ksCwLogs
+              - Arn
+  llsKfdsCwS3Logs:
+    Type: 'AWS::Logs::LogStream'
+    Properties:
+      LogGroupName: !Ref llgKfdsCttLogs
+      LogStreamName: llsKfdsCwS3Logs
+  llsKfdsCttS3Logs:
+    Type: 'AWS::Logs::LogStream'
+    Properties:
+      LogGroupName: !Ref llgKfdsCttLogs
+      LogStreamName: llsKfdsCttS3Logs
+  lfKfdsCwLogsTransformer:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      MemorySize: 128
+      Timeout: 62
+      Handler: transform-logs.handler
+      Description: Used by kfdsCwLogs to decode and decompress data
+      FunctionName: lfKfdsCwLogsTransformer
+      Runtime: nodejs6.10
+      Role: !GetAtt
+        - iamrLfKfdsCwLogsTransformer
+        - Arn
+  llgLfKfdsCwLogsTransformer:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      RetentionInDays: 1
+      LogGroupName: /aws/lambda/lfKfdsCwLogsTransformer
+  iamrLfKfdsCwLogsTransformer:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Path: /service-role/
+      RoleName: iamrLfKfdsCttLogsTransformer
+      ManagedPolicyArns:
+        - !Ref iammpLfKfdsCwLogsTransformer
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+  iammpLfKfdsCwLogsTransformer:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: Used by lfKfdsCwLogsTransformer
+      ManagedPolicyName: iammpLfKfdsCwLogsTransformer
+      Path: /service-policy/
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'logs:CreateLogStream'
+              - 'logs:PutLogEvents'
+            Resource:
+              - !GetAtt
+                - llgLfKfdsCwLogsTransformer
+                - Arn
+  iamrKfdsCwLogsExecution:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: firehose.amazonaws.com
+            Action: 'sts:AssumeRole'
+      RoleName: iamrKfdsCwLogsExecution
+      Path: /service-role/
+      ManagedPolicyArns:
+        - !Ref iammpKfdsCwLogsExecution
+  iammpKfdsCwLogsExecution:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Path: /service-policy/
+      ManagedPolicyName: iammpKfdsCwLogsExecution
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Action:
+              - 's3:AbortMultipartUpload'
+              - 's3:GetBucketLocation'
+              - 's3:GetObject'
+              - 's3:ListBucket'
+              - 's3:ListBucketMultipartUploads'
+              - 's3:PutObject'
+            Resource:
+              - 'arn:aws:s3:::greu-s3b-ec1-kfds-logs'
+              - 'arn:aws:s3:::greu-s3b-ec1-kfds-logs/*'
+          - Sid: ''
+            Effect: Allow
+            Action:
+              - 'lambda:InvokeFunction'
+              - 'lambda:GetFunctionConfiguration'
+            Resource: !Sub 'arn:aws:lambda:eu-west-1:${AWS::AccountId}:function:lfS3bCttLogs:$LATEST'
+          - Sid: ''
+            Effect: Allow
+            Action:
+              - 'lambda:InvokeFunction'
+              - 'lambda:GetFunctionConfiguration'
+            Resource: !GetAtt
+              - lfKfdsCwLogsTransformer
+              - Arn
+          - Sid: ''
+            Effect: Allow
+            Action:
+              - 'es:DescribeElasticsearchDomain'
+              - 'es:DescribeElasticsearchDomains'
+              - 'es:DescribeElasticsearchDomainConfig'
+              - 'es:ESHttpPost'
+              - 'es:ESHttpPut'
+            Resource:
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/edlog'
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/edlog/*'
+          - Sid: ''
+            Effect: Allow
+            Action:
+              - 'es:ESHttpGet'
+            Resource:
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/edlog/_all/_settings'
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/edlog/_cluster/stats'
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/edlog/logs-cloudwatch*/_mapping/lambda'
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/edlog/_nodes'
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/edlog/_nodes/stats'
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/edlog/_nodes/*/stats'
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/edlog/_stats'
+              - !Sub 'arn:aws:es:eu-west-1:${AWS::AccountId}:domain/edlog/logs-cloudwatch*/_stats'
+          - Sid: ''
+            Effect: Allow
+            Action:
+              - 'logs:PutLogEvents'
+            Resource:
+              - !Sub 'arn:aws:logs:eu-west-1:${AWS::AccountId}:log-group:/aws/kinesisfirehose/kfdsCwLogs:log-stream:*'
+          - Sid: ''
+            Effect: Allow
+            Action:
+              - 'kinesis:DescribeStream'
+              - 'kinesis:GetShardIterator'
+              - 'kinesis:GetRecords'
+            Resource: !Sub 'arn:aws:kinesis:eu-west-1:${AWS::AccountId}:stream/lsCwLogs'

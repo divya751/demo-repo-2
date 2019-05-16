@@ -1,0 +1,11 @@
+{
+  "stackName": "SwaggerUI",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "parameters": {
+    "BucketName": "swagger-ui"
+  },
+  "postDeploy": "./deploy.sh"
+}

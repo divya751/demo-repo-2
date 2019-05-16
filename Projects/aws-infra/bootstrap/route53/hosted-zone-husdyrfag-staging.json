@@ -1,0 +1,18 @@
+{
+  "stackName": "HostedZones",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "template": "hosted-zone.yml",
+  "parameters": {
+    "HostName": "husdyrfag-staging.io",
+    "Environment": "husdyrfag-staging",
+    "SESVerificationValue": "kSejS5BzljjMUA8oYEo2D9Zjez7upAiGTTXqpxhHlLU=",
+    "MX": "10 inbound-smtp.eu-west-1.amazonaws.com.",
+    "AutoDiscover": "autodiscover.mail.eu-west-1.awsapps.com.",
+    "DkimVerification1": "ibopjdpbd3odytfalullupfdvon6ymb2",
+    "DkimVerification2": "yan5ckpbgm6pupr3qlljwqm4onyr4dji",
+    "DkimVerification3": "wvkoznexwd6cjsjbewujmdqjq23dr37v"
+  }
+}

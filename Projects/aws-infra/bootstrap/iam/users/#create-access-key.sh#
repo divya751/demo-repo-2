@@ -1,0 +1,4 @@
+#!/bin/bash
+
+eval $(hf-getopt "$@")
+aws iam create-access-key --cli-input-json '{"UserName": "cloudformation"}' $aws_args

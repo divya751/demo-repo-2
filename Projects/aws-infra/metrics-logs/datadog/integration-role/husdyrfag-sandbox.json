@@ -1,0 +1,11 @@
+{
+  "stackName": "DatadogIntegration",
+  "parameters": {
+    "ExternalID": "655b5f6127424c2880c499688689c913"
+  },
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "opts": "--capabilities CAPABILITY_NAMED_IAM"
+}

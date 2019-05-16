@@ -1,0 +1,12 @@
+{
+    "values":
+    {
+        "myOutputS3Loc"            :   "s3://openfarm-datapump/",
+        "myLogS3Path"              :   "s3://openfarm-logcollector",
+        "myDDBReadThroughputRatio" :   "0.5",
+        "myDDBTableName"           :   "openfarm-graph",
+        "myInstanceType"           :   "m1.large",
+        "myInstanceCount"          :   "2",
+        "myRegion"                 :   "eu-west-1"
+    }
+}

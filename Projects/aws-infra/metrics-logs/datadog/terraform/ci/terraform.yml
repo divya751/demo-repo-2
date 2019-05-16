@@ -1,0 +1,166 @@
+resources:
+- name: aws-infra
+  type: git
+  source:
+    uri: git@github.com:TINE-SA/aws-infra.git
+    branch: master
+    private_key: ((git_key.private_key))
+
+jobs:
+- name: deploy-husdyrfagops
+  plan:
+  - get: aws-infra
+    trigger: true
+  - task: deploy
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: hashicorp/terraform
+      inputs:
+        - name: aws-infra
+      params:
+        AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+        AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
+        DATADOG_API_KEY: ((husdyrfagops_datadog_api_key))
+        DATADOG_APP_KEY: ((husdyrfagops_datadog_app_key))
+        ACCOUNT_ALIAS: husdyrfagops
+      run:
+        path: ./aws-infra/metrics-logs/datadog/terraform/ci/deploy.sh
+
+- name: deploy-husdyrfagdev
+  plan:
+  - get: aws-infra
+    trigger: true
+  - task: deploy
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: hashicorp/terraform
+      inputs:
+        - name: aws-infra
+      params:
+        AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+        AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
+        DATADOG_API_KEY: ((husdyrfagdev_datadog_api_key))
+        DATADOG_APP_KEY: ((husdyrfagdev_datadog_app_key))
+        ACCOUNT_ALIAS: husdyrfagdev
+      run:
+        path: ./aws-infra/metrics-logs/datadog/terraform/ci/deploy.sh
+
+- name: deploy-husdyrfagstaging
+  plan:
+  - get: aws-infra
+    trigger: true
+    passed: [deploy-husdyrfagdev]
+  - task: deploy
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: hashicorp/terraform
+      inputs:
+        - name: aws-infra
+      params:
+        AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+        AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
+        DATADOG_API_KEY: ((husdyrfagstaging_datadog_api_key))
+        DATADOG_APP_KEY: ((husdyrfagstaging_datadog_app_key))
+        ACCOUNT_ALIAS: husdyrfagstaging
+      run:
+        path: ./aws-infra/metrics-logs/datadog/terraform/ci/deploy.sh
+
+- name: deploy-husdyrfag
+  plan:
+  - get: aws-infra
+    trigger: true
+    passed: [deploy-husdyrfagdev]
+  - task: deploy
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: hashicorp/terraform
+      inputs:
+        - name: aws-infra
+      params:
+        AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+        AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
+        DATADOG_API_KEY: ((husdyrfag_datadog_api_key))
+        DATADOG_APP_KEY: ((husdyrfag_datadog_app_key))
+        ACCOUNT_ALIAS: husdyrfag
+      run:
+        path: ./aws-infra/metrics-logs/datadog/terraform/ci/deploy.sh
+
+- name: deploy-openfarmdev
+  plan:
+  - get: aws-infra
+    trigger: true
+  - task: deploy
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: hashicorp/terraform
+      inputs:
+        - name: aws-infra
+      params:
+        AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+        AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
+        DATADOG_API_KEY: ((openfarmdev_datadog_api_key))
+        DATADOG_APP_KEY: ((openfarmdev_datadog_app_key))
+        ACCOUNT_ALIAS: openfarmdev
+      run:
+        path: ./aws-infra/metrics-logs/datadog/terraform/ci/deploy.sh
+
+- name: deploy-openfarmstaging
+  plan:
+  - get: aws-infra
+    trigger: true
+    passed: [deploy-openfarmdev]
+  - task: deploy
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: hashicorp/terraform
+      inputs:
+        - name: aws-infra
+      params:
+        AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+        AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
+        DATADOG_API_KEY: ((openfarmstaging_datadog_api_key))
+        DATADOG_APP_KEY: ((openfarmstaging_datadog_app_key))
+        ACCOUNT_ALIAS: openfarmstaging
+      run:
+        path: ./aws-infra/metrics-logs/datadog/terraform/ci/deploy.sh
+
+- name: deploy-openfarm
+  plan:
+  - get: aws-infra
+    trigger: true
+    passed: [deploy-openfarmdev]
+  - task: deploy
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: hashicorp/terraform
+      inputs:
+        - name: aws-infra
+      params:
+        AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+        AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
+        DATADOG_API_KEY: ((openfarm_datadog_api_key))
+        DATADOG_APP_KEY: ((openfarm_datadog_app_key))
+        ACCOUNT_ALIAS: openfarm
+      run:
+        path: ./aws-infra/metrics-logs/datadog/terraform/ci/deploy.sh

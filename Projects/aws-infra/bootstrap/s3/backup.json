@@ -1,0 +1,11 @@
+{
+  "stackName": "InfrastructureBucket",
+  "parameters": {
+    "BucketName": "infrastructure-artifacts"
+  },
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "region": "eu-central-1"
+}

@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Lambda function that creates log group subscriptions to Datadog function
+
+Resources:
+  SubscriberFunctionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ['lambda.amazonaws.com']
+            Action: ['sts:AssumeRole']
+      Policies:
+        - PolicyName: cloudwatch-logs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:*'
+                Resource: '*'
+
+  SubscriberFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: ../subscriber-function
+      MemorySize: 128
+      Description: Subscribes log streams to datadog logs function
+      Handler: index.handler
+      Runtime: nodejs6.10
+      Timeout: 30
+      Role: !GetAtt SubscriberFunctionRole.Arn
+      Environment:
+        Variables:
+          DATADOG_FUNCTION_ARN: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:DatadogLogs'
+      Events:
+        ScheduleSubscribeFunction:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)

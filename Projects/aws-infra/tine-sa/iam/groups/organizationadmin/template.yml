@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  TINE-SA group for managing AWS organization. Can assume the CloudFormation role
+
+Resources:
+  AWSOrganizationPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: Allow users to administrer organization
+      ManagedPolicyName: iammpAWSOrganization
+      Path: /admin/
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowOrganizationExceptIAMAndPortalIfMFAd
+            Effect: Allow
+            NotAction:
+              - 'iam:*'
+              - 'aws-portal:*'
+            Resource: 'organizations:*'
+            Condition:
+              Bool:
+                'aws:MultiFactorAuthPresent': true
+  AWSOrganizationGroup:
+    Type: 'AWS::IAM::Group'
+    Properties:
+      GroupName: iamgAWSOrganizationAdmin
+      ManagedPolicyArns:
+        - !Ref AWSOrganizationPolicy
+        - 'arn:aws:iam::641159406575:policy/iammpForceMfa'
+      Path: /admin/

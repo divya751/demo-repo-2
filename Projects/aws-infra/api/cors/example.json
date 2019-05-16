@@ -1,0 +1,8 @@
+{
+  "stackName": "CorsExampleApi",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "template": "example.yml"
+}

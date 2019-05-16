@@ -1,0 +1,187 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: 'AWS::Serverless-2016-10-31'
+
+Parameters:
+  ReplicationBucketName:
+    Description: Name of s3 bucket that backup bucket should replicate to.
+    Type: String
+  BucketName:
+    Description: Name of backup bucket for ctt logs.
+    Type: String
+  SandboxAccountId:
+    Description: Account id for Sandbox.
+    Type: String
+  HusdyrfagAccountId:
+    Description: Account id for Husdyrfag.
+    Type: String
+  MasterAccountId:
+    Description: Account id for Master.
+    Type: String
+  lfS3bCttAclVersion:
+    Type: String
+  HusdyrfagAccountCanonicalId:
+    Description: Canonical id for the husdyrfag account.
+    Type: String
+
+Resources:
+  s3bCttLogs:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref BucketName
+      VersioningConfiguration:
+        Status: Enabled
+      ReplicationConfiguration:
+        Role: !GetAtt
+          - iamrS3bLogs
+          - Arn
+        Rules:
+          - Destination:
+              Bucket: !Sub 'arn:aws:s3:::${ReplicationBucketName}'
+            Status: Enabled
+            Prefix: ''
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: 's3:ObjectCreated:*'
+            Function: !GetAtt GrantLogsReadPermission.Arn
+      LifecycleConfiguration:
+        Rules:
+          - Id: Expiration
+            Status: Enabled
+            ExpirationInDays: 60
+            NoncurrentVersionExpirationInDays: 30
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+          - Id: Glacier
+            Status: Enabled
+            Transitions:
+              - StorageClass: GLACIER
+                TransitionInDays: 1
+  s3bpCttLogs:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref s3bCttLogs
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AWSCloudTrailAclCheck20131101
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: 's3:GetBucketAcl'
+            Resource: !Sub 'arn:aws:s3:::${BucketName}'
+          - Sid: AWSCloudTrailWrite20131101
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: 's3:PutObject'
+            Resource:
+              - !Sub 'arn:aws:s3:::${BucketName}/AWSLogs/${SandboxAccountId}/*'
+              - !Sub 'arn:aws:s3:::${BucketName}/AWSLogs/${HusdyrfagAccountId}/*'
+              - !Sub 'arn:aws:s3:::${BucketName}/AWSLogs/${MasterAccountId}/*'
+            Condition:
+              StringEquals:
+                's3:x-amz-acl': bucket-owner-full-control
+  iamrS3bLogs:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: iamrS3bLogs
+      Path: /service-role/
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: s3.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - !Ref iammpS3bLogs
+  iammpS3bLogs:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: Used for replicating backups to Master
+      ManagedPolicyName: iammpS3bLogs
+      Path: /service-policy/
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:GetObjectVersion'
+              - 's3:GetObjectVersionAcl'
+            Resource:
+              - !Sub 'arn:aws:s3:::${BucketName}/*'
+          - Effect: Allow
+            Action:
+              - 's3:ListBucket'
+              - 's3:GetReplicationConfiguration'
+            Resource:
+              - !Sub 'arn:aws:s3:::${BucketName}'
+          - Effect: Allow
+            Action:
+              - 's3:ReplicateObject'
+              - 's3:ReplicateDelete'
+            Resource: !Sub 'arn:aws:s3:::${ReplicationBucketName}/*'
+  GrantLogsReadPermission:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: lfS3bCttAcl
+      MemorySize: 128
+      Description: Updates ACL for all Cloudtrail logs
+      Environment:
+        Variables:
+          HusdyrfagCanonicalId: !Ref HusdyrfagAccountCanonicalId
+      Handler: index.handler
+      Role: !GetAtt iamrLfCttLogs.Arn
+      Runtime: nodejs6.10
+      Timeout: 20
+      TracingConfig:
+        Mode: PassThrough
+  iamrLfCttLogs:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: iamrLfCttLogs
+      Path: /service-role/
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonS3FullAccess'
+        - !Ref iammpLfCttLogs
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+  iammpLfCttLogs:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: Used by iamrLfCttLogs
+      ManagedPolicyName: iammpLfCttLogs
+      Path: /service-policy/
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'logs:CreateLogStream'
+              - 'logs:PutLogEvents'
+            Resource:
+              - !GetAtt
+                - llgLfCttLogs
+                - Arn
+  llgLfCttLogs:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: '/aws/lambda/lfS3bCttAcl'
+      RetentionInDays: 7
+  lvS3bCttAcl:
+    Type: 'AWS::Lambda::Version'
+    Properties:
+      FunctionName: !Ref GrantLogsReadPermission
+      Description: First version of lambda
+  lpS3bCttAcl:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref GrantLogsReadPermission
+      Principal: s3.amazonaws.com
+      SourceAccount: !Sub '${AWS::AccountId}'

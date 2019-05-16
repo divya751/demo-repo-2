@@ -1,0 +1,10 @@
+{
+  "stackName": "Nexus",
+  "parameters": {
+    "SubDomain": "nexus"
+  },
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  }
+}

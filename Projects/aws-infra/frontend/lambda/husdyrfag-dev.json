@@ -1,0 +1,13 @@
+{
+  "stackName": "WebFrontendRewriter",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "region": "us-east-1",
+  "parameters": {
+    "FrontendCDN": "E301MLQAZONJ1B"
+  },
+  "opts": "--capabilities CAPABILITY_NAMED_IAM",
+  "postDeploy": "./add-cloudfront-trigger.sh"
+}

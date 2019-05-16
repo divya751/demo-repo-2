@@ -1,0 +1,10 @@
+{
+  "stackName": "Network",
+  "parameters": {
+    "VpcDescriptiveName": "husdyrfag"
+  },
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "stackName": "EcsIamResources",
+  "tags": {
+    "CostCenter": "OpenFarm",
+    "SystemContext": "Platform"
+  },
+  "opts": "--capabilities CAPABILITY_NAMED_IAM",
+  "parameters": {
+    "KmsDefaultKeyId": "c4e48b24-e925-48d9-ae68-5a9d3a12e6b2"
+  }
+}

@@ -1,0 +1,38 @@
+platform: linux
+
+resources:
+  - name: every-24-hours
+    type: time
+    source:
+      interval: 24h
+  - name: repo
+    type: git
+    source:
+      uri: git@github.com:TINE-SA/aws-infra.git
+      branch: master
+      private_key: ((git_key.private_key))
+
+jobs:
+- name: rotate
+  serial: true
+  plan:
+    - get: every-24-hours
+      trigger: true
+    - get: repo
+    - task: rotate-keys
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source:
+            repository: ((ecr_base_uri))/husdyrfag/concourse-rotate-keys
+            aws_access_key_id: ((ecr_key_id))
+            aws_secret_access_key: ((ecr_key_secret))
+        inputs:
+          - name: repo
+        params:
+          credhub_password: ((credhub_password))
+          credhub_certificate: ((credhub_certificate))
+          credhub_server: ((credhub_server))
+        run:
+          path: ./repo/ops/concourse/ci/rotate-keys.sh

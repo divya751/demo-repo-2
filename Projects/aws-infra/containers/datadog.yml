@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Datadog task definition
+
+Parameters:
+  DatadogAPIKey:
+    Type: String
+    Description: Enter unique API key for your organization. API key is required by the Datadog Agent to submit metrics and events to Datadog
+
+Resources:
+  Taskdefinition:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      RequiresCompatibilities:
+        - "EC2"
+
+      ContainerDefinitions:
+        - Name: "datadog-agent"
+          MountPoints:
+            - ContainerPath: "/var/run/docker.sock"
+              SourceVolume: docker_sock
+            - ContainerPath: "/host/sys/fs/cgroup"
+              SourceVolume: cgroup
+              ReadOnly: true
+            - ContainerPath: "/host/proc"
+              SourceVolume: proc
+              ReadOnly: true
+            - ContainerPath: "/opt/datadog-agent/run"
+              SourceVolume: opt-datadog-agent-run
+            - ContainerPath: "/conf.d"
+              SourceVolume: opt-datadog-agent-confd
+              ReadOnly: true
+          Image: "datadog/agent:latest"
+          Cpu: "10"
+          Memory: "256"
+          Essential: "true"
+          Environment:
+            - Name: "DD_API_KEY"
+              Value: !Ref DatadogAPIKey
+            - Name: "SD_BACKEND"
+              Value: "docker"
+            - Name: "DD_LOG_ENABLED"
+              Value: "true"
+            - Name: "DD_PROCESS_AGENT_ENABLED"
+              Value: "true"
+
+      Volumes:
+        - Host:
+            SourcePath: "/var/run/docker.sock"
+          Name: docker_sock
+        - Host:
+            SourcePath: "/proc/"
+          Name: proc
+        - Host:
+            SourcePath: "/cgroup/"
+          Name: cgroup
+        - Host:
+            SourcePath: "/opt/datadog-agent/run"
+          Name: opt-datadog-agent-run
+        - Host:
+            SourcePath: "/opt/datadog-agent/conf.d"
+          Name: opt-datadog-agent-confd
+
+      Family: datadog-agent
+
+Outputs:
+  DatadogAPIKey:
+    Description: The DatadogAPIKey
+    Value: !Ref DatadogAPIKey

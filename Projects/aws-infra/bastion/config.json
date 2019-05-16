@@ -1,0 +1,17 @@
+{
+  "stackName": "BastionHost",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "parameters": {
+    "KeyName": "bastion"
+  },
+  "opts": "--capabilities CAPABILITY_IAM",
+  "ttl": "10800",
+  "filePrefix": "bastion/",
+  "files": [
+    "banner.txt",
+    "bootstrap.sh"
+  ]
+}

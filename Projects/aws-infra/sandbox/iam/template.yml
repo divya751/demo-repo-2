@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Resources:
+  DevelopersPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: >-
+        Allow MFA users to access everything except billing and other IAM
+        resources than themselves
+      ManagedPolicyName: iammpDevelopers
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowAllExceptIAMAndPortalIfMFAd
+            Effect: Allow
+            NotAction:
+              - 'iam:*'
+              - 'aws-portal:*'
+            Resource: '*'
+            Condition:
+              Bool:
+                'aws:MultiFactorAuthPresent': true
+
+  DevelopersSandboxRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: Developer
+      ManagedPolicyArns:
+        - 'arn:aws:iam::831775572745:policy/iammpDevelopers'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: 'arn:aws:iam::751750612325:root'
+            Action: sts:AssumeRole
+            Condition:
+              Bool:
+                aws:MultiFactorAuthPresent: 'true'

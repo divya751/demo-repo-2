@@ -1,0 +1,261 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  A VPC with a public subnet behind an internet gateway, and a "private" subnet
+  behind a NAT gateway.
+
+Parameters:
+  VpcDescriptiveName:
+    Type: String
+    Description: Descriptive name of the VPC
+
+Mappings:
+  RegionMap:
+    eu-west-1:
+      AvailabilityZoneA: eu-west-1a
+      AvailabilityZoneB: eu-west-1b
+      AvailabilityZoneC: eu-west-1c
+
+Conditions:
+  HasAZA: !Equals [!Ref 'AWS::Region', 'eu-west-1']
+  HasAZB: !Equals [!Ref 'AWS::Region', 'eu-west-1']
+  HasAZC: !Equals [!Ref 'AWS::Region', 'eu-west-1']
+
+Resources:
+  VPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      InstanceTenancy: default
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Ref VpcDescriptiveName
+  PrivateSubnetAZA:
+    Type: 'AWS::EC2::Subnet'
+    Condition: HasAZA
+    Properties:
+      CidrBlock: 10.0.0.0/20
+      AvailabilityZone: !FindInMap [RegionMap, !Ref 'AWS::Region', AvailabilityZoneA]
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${VpcDescriptiveName}-private-a'
+  PublicSubnetAZA:
+    Type: 'AWS::EC2::Subnet'
+    Condition: HasAZA
+    Properties:
+      CidrBlock: 10.0.63.0/24
+      AvailabilityZone: !FindInMap [RegionMap, !Ref 'AWS::Region', AvailabilityZoneA]
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${VpcDescriptiveName}-public-a'
+  PrivateSubnetAZB:
+    Type: 'AWS::EC2::Subnet'
+    Condition: HasAZB
+    Properties:
+      CidrBlock: 10.0.64.0/20
+      AvailabilityZone: !FindInMap [RegionMap, !Ref 'AWS::Region', AvailabilityZoneB]
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${VpcDescriptiveName}-private-b'
+  PublicSubnetAZB:
+    Type: 'AWS::EC2::Subnet'
+    Condition: HasAZB
+    Properties:
+      CidrBlock: 10.0.127.0/24
+      AvailabilityZone: !FindInMap [RegionMap, !Ref 'AWS::Region', AvailabilityZoneB]
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${VpcDescriptiveName}-public-b'
+  PrivateSubnetAZC:
+    Type: 'AWS::EC2::Subnet'
+    Condition: HasAZC
+    Properties:
+      CidrBlock: 10.0.128.0/20
+      AvailabilityZone: !FindInMap [RegionMap, !Ref 'AWS::Region', AvailabilityZoneC]
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${VpcDescriptiveName}-private-c'
+  PublicSubnetAZC:
+    Type: 'AWS::EC2::Subnet'
+    Condition: HasAZC
+    Properties:
+      CidrBlock: 10.0.191.0/24
+      AvailabilityZone: !FindInMap [RegionMap, !Ref 'AWS::Region', AvailabilityZoneC]
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${VpcDescriptiveName}-public-c'
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Ref VpcDescriptiveName
+  DHCPOptions:
+    Type: 'AWS::EC2::DHCPOptions'
+    Properties:
+      DomainName: !Sub '${AWS::Region}.compute.internal'
+      DomainNameServers:
+        - AmazonProvidedDNS
+  VPCDHCP:
+    Type: 'AWS::EC2::VPCDHCPOptionsAssociation'
+    Properties:
+      VpcId: !Ref VPC
+      DhcpOptionsId: !Ref DHCPOptions
+  DefaultSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Sub 'Default ${VpcDescriptiveName} VPC security group'
+      VpcId: !Ref VPC
+  DefaultSecurityGroupIngress:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref DefaultSecurityGroup
+      IpProtocol: '-1'
+      SourceSecurityGroupId: !Ref DefaultSecurityGroup
+  DefaultSecurityGroupEgress:
+    Type: 'AWS::EC2::SecurityGroupEgress'
+    Properties:
+      GroupId: !Ref DefaultSecurityGroup
+      IpProtocol: '-1'
+      CidrIp: 0.0.0.0/0
+  PublicRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${VpcDescriptiveName}-internet-facing'
+  PrivateRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub '${VpcDescriptiveName}-internal'
+  NATIP:
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      Domain: vpc
+  VPCInternetGateway:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  VPCNATGateway:
+    Type: 'AWS::EC2::NatGateway'
+    DependsOn: VPCInternetGateway
+    Properties:
+      AllocationId: !GetAtt NATIP.AllocationId
+      SubnetId: !Ref PublicSubnetAZA
+      Tags:
+        - Key: Name
+          Value: !Sub '${VpcDescriptiveName}-nat'
+  PrivateSubnetAZARoute:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Condition: HasAZA
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnetAZA
+  PublicSubnetAZARoute:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Condition: HasAZA
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetAZA
+  PrivateSubnetAZBRoute:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Condition: HasAZB
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnetAZB
+  PublicSubnetAZBRoute:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Condition: HasAZB
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetAZB
+  PrivateSubnetAZCRoute:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Condition: HasAZC
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnetAZC
+  PublicSubnetAZCRoute:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Condition: HasAZC
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetAZC
+  IGWRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn: VPCInternetGateway
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: !Ref PublicRouteTable
+      GatewayId: !Ref InternetGateway
+  NATRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn: VPCNATGateway
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: !Ref PrivateRouteTable
+      NatGatewayId: !Ref VPCNATGateway
+
+Outputs:
+  VPC:
+    Description: 'VPC id'
+    Value: !Ref VPC
+    Export:
+      Name: VPC
+  DefaultSecurityGroup:
+    Value: !Ref DefaultSecurityGroup
+    Export:
+      Name: VpcDefaultSecurityGroup
+  VPCCidrBlock:
+    Description: 'Assigned VPC CIDR Block'
+    Value: !GetAtt VPC.CidrBlock
+    Export:
+      Name: VPCCidrBlock
+  PrivateSubnetAZA:
+    Description: 'Private subnet in availability zone A'
+    Value: !Ref PrivateSubnetAZA
+    Condition: HasAZA
+    Export:
+      Name: PrivateSubnetAZA
+  PublicSubnetAZA:
+    Description: 'Public subnet in availability zone A'
+    Value: !Ref PublicSubnetAZA
+    Condition: HasAZA
+    Export:
+      Name: PublicSubnetAZA
+  PrivateSubnetAZB:
+    Description: 'Private subnet in availability zone B'
+    Value: !Ref PrivateSubnetAZB
+    Condition: HasAZB
+    Export:
+      Name: PrivateSubnetAZB
+  PublicSubnetAZB:
+    Description: 'Public subnet in availability zone B'
+    Value: !Ref PublicSubnetAZB
+    Condition: HasAZB
+    Export:
+      Name: PublicSubnetAZB
+  PrivateSubnetAZC:
+    Description: 'Private subnet in availability zone C'
+    Value: !Ref PrivateSubnetAZC
+    Condition: HasAZC
+    Export:
+      Name: PrivateSubnetAZC
+  PublicSubnetAZC:
+    Description: 'Public subnet in availability zone C'
+    Value: !Ref PublicSubnetAZC
+    Condition: HasAZC
+    Export:
+      Name: PublicSubnetAZC

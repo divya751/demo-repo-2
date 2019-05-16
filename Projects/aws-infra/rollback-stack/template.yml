@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Lambda function that runs rollback on stuck CloudFormation stacks
+
+Resources:
+  RollbackStack:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: RollbackStack
+      MemorySize: 128
+      Description: Rollback CF stack if a rule triggers
+      Handler: index.handler
+      Runtime: nodejs6.10
+      Timeout: 20
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - 'cloudformation:DescribeStacks'
+                - 'cloudformation:DescribeStackResources'
+                - 'cloudformation:CancelUpdateStack'
+                - 'iam:PassRole'
+              Resource:
+                - '*'
+      Events:
+        ContainerInTaskExited:
+          Type: CloudWatchEvent
+          Properties:
+            Pattern:
+              source:
+                - "aws.ecs"
+              detail-type:
+                - "ECS Task State Change"
+              detail:
+                lastStatus:
+                  - "STOPPED"
+                stoppedReason:
+                  - "Essential container in task exited"
+  LogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${RollbackStack}'
+  TerminateOverdueStacksSubscriptionFilter:
+    Type: 'AWS::Logs::SubscriptionFilter'
+    Properties:
+      LogGroupName: !Ref LogGroup
+      FilterPattern: 'level'
+      DestinationArn: !ImportValue DatadogLogsArn

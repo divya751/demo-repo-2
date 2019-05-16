@@ -1,0 +1,10 @@
+{
+  "stackName": "SSLCertificate",
+  "tags": {
+    "CostCenter": "OpenFarm",
+    "SystemContext": "Platform"
+  },
+  "parameters": {
+    "HostName": "openfarm-staging.io"
+  }
+}

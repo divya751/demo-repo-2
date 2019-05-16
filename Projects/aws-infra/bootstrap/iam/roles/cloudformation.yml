@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  IamAccountNumber:
+    Type: String
+    Default: 751750612325
+
+Resources:
+  CloudFormationRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: CloudFormation
+      Path: /service-role/
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AdministratorAccess'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+              AWS: !Sub 'arn:aws:iam::${IamAccountNumber}:root'
+            Action: 'sts:AssumeRole'
+
+Outputs:
+  RoleARN:
+    Value: !GetAtt CloudFormationRole.Arn
+    Description: Arn of role
+    Export:
+      Name: CloudformationRoleARN

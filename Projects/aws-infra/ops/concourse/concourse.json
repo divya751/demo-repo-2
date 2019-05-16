@@ -1,0 +1,17 @@
+{
+  "stackName": "ConcourseDNS",
+  "parameters": {
+    "VpcId": "vpc-6152dd07",
+    "InstanceId": "i-0d5de935c781c542a",
+    "InternetGatewayId": "igw-79d4b51e",
+    "SubnetId": "subnet-4a253811",
+    "SecurityGroupId": "sg-73497c09",
+    "SubDomain": "ci",
+    "CertificateArn": "arn:aws:acm:eu-west-1:067191250127:certificate/25f13651-70f8-45be-893d-da196ad94288"
+  },
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "template": "concourse.yml"
+}

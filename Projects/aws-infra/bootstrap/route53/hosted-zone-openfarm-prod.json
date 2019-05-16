@@ -1,0 +1,18 @@
+{
+  "stackName": "HostedZones",
+  "tags": {
+    "CostCenter": "OpenFarm",
+    "SystemContext": "Platform"
+  },
+  "template": "hosted-zone.yml",
+  "parameters": {
+    "HostName": "openfarm.io",
+    "Environment": "openfarm-prod",
+    "SESVerificationValue": "KzaLqMsXrlooy2sxFtWifGVt574odW2hRy9Oj33kPCw=",
+    "MX": "10 inbound-smtp.eu-west-1.amazonaws.com.",
+    "AutoDiscover": "autodiscover.mail.eu-west-1.awsapps.com.",
+    "DkimVerification1": "owkguwbykxhve3lmtcdv5m7iqbj5uqkz",
+    "DkimVerification2": "6nkn2pqftqwncvxqzd7yotuox3wwjkjn",
+    "DkimVerification3": "3ebramldslz7rppvwpz5qtwai5dhvqwy"
+  }
+}

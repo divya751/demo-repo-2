@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Resources:
+  DebugRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: Debug
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: 'arn:aws:iam::751750612325:root'
+          Action: 'sts:AssumeRole'
+          Condition:
+            Bool:
+              aws:MultiFactorAuthPresent: 'true'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/ReadOnlyAccess
+        - arn:aws:iam::aws:policy/AWSSupportAccess
+      Policies:
+        - PolicyName: invoke-lambda-policy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'lambda:InvokeFunction'
+                Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*'
+        - PolicyName: invoke-apigw-endpoint
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'apigateway:POST'
+                  - 'apigateway:GET'
+                  - 'apigateway:OPTIONS'
+                  - 'apigateway:DELETE'
+                Resource: !Sub 'arn:aws:apigateway:${AWS::Region}::/restapis/*'
+  ReadOnlyRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: ReadOnly
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/ReadOnlyAccess'
+        - 'arn:aws:iam::aws:policy/AWSSupportAccess'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: 'arn:aws:iam::751750612325:root'
+            Action: sts:AssumeRole
+            Condition:
+              Bool:
+                aws:MultiFactorAuthPresent: 'true'

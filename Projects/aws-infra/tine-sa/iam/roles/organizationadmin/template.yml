@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Creates organization admin role, to be used only by admins for the TINE-SA org to automate account creation.
+
+Resources:
+  Admin:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: AWSOrganizationAdmin
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: arn:aws:iam::641159406575:root
+              AWS: arn:aws:iam::751750612325:root
+            Action: sts:AssumeRole
+            Condition:
+              Bool:
+                aws:MultiFactorAuthPresent: 'true'

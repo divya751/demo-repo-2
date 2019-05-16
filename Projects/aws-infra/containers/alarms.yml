@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: ECS CloudWatch Alarms
+
+Resources:
+  TaskStoppedEventRule:
+    Type: "AWS::Events::Rule"
+    Properties:
+        Name: ECSContainerInTaskExited
+        Description: "ECS: Essential container in task exited"
+        EventPattern:
+          source:
+            - "aws.ecs"
+          detail-type:
+            - "ECS Task State Change"
+          detail:
+            lastStatus:
+              - "STOPPED"
+            stoppedReason:
+              - "Essential container in task exited"
+        State: "ENABLED"
+
+  TaskStoppedAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmDescription: "ECS: Alarm if container in task exited"
+      AlarmName: "EcsCluster-ContainerInTaskExited"
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: RuleName
+          Value: ECSContainerInTaskExited
+      EvaluationPeriods: 1
+      MetricName: TriggeredRules
+      Namespace: AWS/Events
+      Period: 60
+      Statistic: SampleCount
+      Threshold: 1
+      Unit: Count

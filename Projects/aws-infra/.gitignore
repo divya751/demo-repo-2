@@ -1,0 +1,9 @@
+*.zip
+node_modules
+.idea
+*.iml
+.terraform
+*.log
+deploy.*.yml
+
+**/output

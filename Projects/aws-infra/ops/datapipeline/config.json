@@ -1,0 +1,9 @@
+{
+  "stackName": "DatapipelineUser",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "opts": "--capabilities CAPABILITY_NAMED_IAM",
+  "template": "datapipelineuser.yml"
+}

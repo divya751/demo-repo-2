@@ -1,0 +1,17 @@
+{
+  "stackName": "EcsCluster",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "parameters": {
+    "KeyName": "ecs-ec2-instances",
+    "MaxSize": "10",
+    "DatadogAPIKey": "1bf146b3b91135a1bdb80c1c899d2403",
+    "DeregistrationDelay": "30"
+  },
+  "filePrefix": "datadog-agent/",
+  "files": [
+    "datadog-agent.yaml"
+  ]
+}

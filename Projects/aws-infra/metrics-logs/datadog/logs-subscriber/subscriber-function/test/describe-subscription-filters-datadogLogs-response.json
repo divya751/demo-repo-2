@@ -1,0 +1,12 @@
+{
+  "subscriptionFilters": [
+    {
+      "filterName": "MilkQuality-GetQualityList-ARLMU0S7SR6E-CommandMapSubscriptionFilter-1L1HM5CIVFELH",
+      "logGroupName": "/aws/lambda/milkbringer-get-quality-list",
+      "filterPattern": "level",
+      "destinationArn": "arn:aws:lambda:eu-west-1:925832396712:function:DatadogLogs",
+      "distribution": "ByLogStream",
+      "creationTime": 1521196501953
+    }
+  ]
+}

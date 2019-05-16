@@ -1,0 +1,13 @@
+{
+  "stackName": "Logs",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "parameters": {
+    "BackupAccountId": "669632543524",
+    "LogBucketName": "wyhd-s3b-ew1-p-log-replication-target",
+    "FirehoseBucketName": "emqs-s3b-ew1-p-logs-firehose-backup"
+  },
+  "opts": "--capabilities CAPABILITY_NAMED_IAM"
+}

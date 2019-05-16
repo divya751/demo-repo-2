@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+  CloudFormationUser:
+    Type: 'AWS::IAM::User'
+    Properties:
+      Path: /users/
+      Policies:
+        - PolicyName: AccessToCloudFormationOnly
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: AllowAllCloudFormation
+                Effect: Allow
+                Action:
+                  - iam:PassRole
+                  - cloudformation:ListImports
+                  - cloudformation:ListStacks
+                  - cloudformation:DescribeChangeSet
+                  - cloudformation:ValidateTemplate
+                  - cloudformation:UpdateStack
+                  - cloudformation:GetTemplateSummary
+                  - cloudformation:DescribeAccountLimits
+                  - cloudformation:CreateStack
+                  - cloudformation:DescribeStackResource
+                  - cloudformation:DescribeStackEvents
+                  - cloudformation:ListExports
+                  - cloudformation:PreviewStackUpdate
+                  - cloudformation:CreateUploadBucket
+                  - cloudformation:SignalResource
+                  - cloudformation:ExecuteChangeSet
+                  - cloudformation:DescribeStacks
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:SetStackPolicy
+                  - cloudformation:GetTemplate
+                  - cloudformation:DescribeStackResources
+                  - cloudformation:GetStackPolicy
+                  - cloudformation:EstimateTemplateCost
+                  - cloudformation:ContinueUpdateRollback
+                  - cloudformation:ListStackResources
+                  - cloudformation:ListChangeSets
+                Resource: '*'
+      UserName: CloudFormation
+  ConcourseUser:
+    Type: 'AWS::IAM::User'
+    Properties:
+      Path: /users/
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AdministratorAccess'
+      UserName: ConcourseWorker

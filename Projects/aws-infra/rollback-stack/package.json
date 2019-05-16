@@ -1,0 +1,20 @@
+{
+  "name": "rollback-stack",
+  "version": "1.0.0",
+  "description": "A lambda that terminates stacks with stuck ECS tasks",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test.js",
+    "autotest": "npm run test -- --watch"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "winston": "3.0.0-rc0"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.156.0",
+    "chai": "^4.1.2",
+    "mocha": "^4.0.1",
+    "sinon": "^4.1.2"
+  }
+}

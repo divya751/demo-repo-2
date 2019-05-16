@@ -1,0 +1,11 @@
+{
+  "stackName": "WebFrontend",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "parameters": {
+    "BucketName": "frontend-apps",
+    "SubDomain": "web"
+  }
+}

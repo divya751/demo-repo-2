@@ -1,0 +1,8 @@
+{
+  "stackName": "RecordSets",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "template": "recordset.yml"
+}

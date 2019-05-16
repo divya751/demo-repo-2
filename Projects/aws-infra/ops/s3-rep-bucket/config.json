@@ -1,0 +1,9 @@
+{
+  "stackName": "s3bucketglacier1",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "opts": "--capabilities CAPABILITY_NAMED_IAM",
+  "template": "template.yml"
+}

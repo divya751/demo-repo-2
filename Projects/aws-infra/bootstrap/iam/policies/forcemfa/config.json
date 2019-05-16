@@ -1,0 +1,8 @@
+{
+  "stackName": "ForceMfaPolicy",
+  "tags": {
+    "CostCenter": "TINE-SA",
+    "SystemContext": "Platform"
+  },
+  "opts": "--capabilities CAPABILITY_NAMED_IAM"
+}

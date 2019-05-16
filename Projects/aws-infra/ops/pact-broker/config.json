@@ -1,0 +1,15 @@
+{
+  "stackName": "PactBroker",
+  "parameters": {
+    "SubDomain": "pact-broker",
+    "DbName": "pact",
+    "DbUser": "pact",
+    "DbPassword": "S0meP4ssw0rd",
+    "BasicAuthUser": "admin",
+    "BasicAuthPassword": "MyPactBrokerPassw0rd"
+  },
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  }
+}

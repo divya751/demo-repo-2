@@ -1,0 +1,170 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: IAM roles, policies and profiles for ECS clusters, instances and tasks
+
+Parameters:
+  KmsDefaultKeyId:
+    Type: String
+
+Resources:
+  EcsContainerApplicationPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'ecs:CreateCluster'
+              - 'ecs:DeregisterContainerInstance'
+              - 'ecs:DiscoverPollEndpoint'
+              - 'ecs:Poll'
+              - 'ecs:RegisterContainerInstance'
+              - 'ecs:StartTelemetrySession'
+              - 'ecs:Submit*'
+              - 'logs:CreateLogStream'
+              - 'logs:PutLogEvents'
+              - 'ecr:BatchCheckLayerAvailability'
+              - 'ecr:BatchGetImage'
+              - 'ecr:GetDownloadUrlForLayer'
+              - 'ecr:GetAuthorizationToken'
+              - 'kinesis:PutRecord*' # TODO: Move to dedicated Policy/Role for apps writing to Kinesis
+            Resource: '*'
+
+  EcsContainerParameterStorePolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'ssm:DescribeParameters'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'ssm:GetParameter*'
+            Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*'
+          - Effect: Allow
+            Action:
+              - 'kms:Decrypt'
+            Resource: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:${KmsDefaultKeyId}'
+
+  ECSServiceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [ecs.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      Path: /
+      RoleName: ECSServiceRole
+      Policies:
+        - PolicyName: ecs-service
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'elasticloadbalancing:DeregisterInstancesFromLoadBalancer'
+                  - 'elasticloadbalancing:DeregisterTargets'
+                  - 'elasticloadbalancing:Describe*'
+                  - 'elasticloadbalancing:RegisterInstancesWithLoadBalancer'
+                  - 'elasticloadbalancing:RegisterTargets'
+                  - 'ec2:Describe*'
+                  - 'ec2:AuthorizeSecurityGroupIngress'
+                Resource: '*'
+
+  EC2Role:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+           - Effect: Allow
+             Principal:
+               Service: [ec2.amazonaws.com]
+             Action: ['sts:AssumeRole']
+      Path: /
+      RoleName: EcsInstanceRole
+      ManagedPolicyArns:
+        - !Ref EcsContainerApplicationPolicy
+        - !Ref EcsContainerParameterStorePolicy
+      Policies:
+        - PolicyName: datadog-agent
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ecs:RegisterContainerInstance'
+                  - 'ecs:DeregisterContainerInstance'
+                  - 'ecs:DiscoverPollEndpoint'
+                  - 'ecs:Submit*'
+                  - 'ecs:Poll'
+                  - 'ecs:StartTask'
+                  - 'ecs:StartTelemetrySession'
+                Resource: '*'
+        - PolicyName: datadog-agent-s3
+          PolicyDocument:
+            Statement:
+              - Action:
+                  - 's3:GetObject'
+                Resource: !Sub
+                  - 'arn:aws:s3:::${BucketName}/datadog-agent/*'
+                  - BucketName: !ImportValue InfrastructureBucketName
+                Effect: Allow
+
+  EC2InstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: /
+      Roles: [!Ref EC2Role]
+
+  AutoscalingRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [application-autoscaling.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      Path: /
+      RoleName: iamrAutoscalingRole
+      Policies:
+        - PolicyName: service-autoscaling
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'application-autoscaling:*'
+                  - 'cloudwatch:DescribeAlarms'
+                  - 'cloudwatch:PutMetricAlarm'
+                  - 'ecs:DescribeServices'
+                  - 'ecs:UpdateService'
+                Resource: '*'
+
+Outputs:
+  ECSServiceRole:
+    Value: !Ref ECSServiceRole
+    Export:
+      Name: ECSServiceRole
+  EC2Role:
+    Value: !Ref EC2Role
+    Export:
+      Name: EC2Role
+  EC2InstanceProfile:
+    Value: !Ref EC2InstanceProfile
+    Export:
+      Name: EC2InstanceProfile
+  AutoscalingRole:
+    Value: !GetAtt AutoscalingRole.Arn
+    Export:
+      Name: AutoscalingRole
+  EcsContainerApplicationPolicy:
+    Value: !Ref EcsContainerApplicationPolicy
+    Export:
+      Name: EcsContainerApplicationPolicy
+  EcsContainerParameterStorePolicy:
+    Value: !Ref EcsContainerParameterStorePolicy
+    Export:
+      Name: EcsContainerParameterStorePolicy

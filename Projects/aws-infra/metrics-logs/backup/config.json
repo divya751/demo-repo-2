@@ -1,0 +1,17 @@
+{
+  "stackName": "CloudtrailLogs",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "parameters": {
+    "ReplicationBucketName": "wyhd-s3b-ew1-p-log-replication-target",
+    "BucketName": "iekj-s3b-ec1-b-logs-backup",
+    "SandboxAccountId": "751750612325",
+    "HusdyrfagAccountId": "576279076904",
+    "MasterAccountId": "641159406575",
+    "HusdyrfagAccountCanonicalId": "2fc657d6596cd3755639fc4582958f0656d88fda8b87fc95a8100501fe6c210f"
+  },
+  "opts": "--capabilities CAPABILITY_NAMED_IAM",
+  "region": "eu-central-1"
+}

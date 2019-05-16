@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Creates an ELB for Concourse-up and attaches the certificate to it. Also modifies the DNS record.
+
+Parameters:
+  VpcId:
+    Type: 'AWS::EC2::VPC::Id'
+  SubDomain:
+    Type: String
+  InstanceId:
+    Type: 'AWS::EC2::Instance::Id'
+  InternetGatewayId:
+    Type: String
+  SubnetId:
+    Type: 'AWS::EC2::Subnet::Id'
+  SecurityGroupId:
+    Type: 'AWS::EC2::SecurityGroup::Id'
+  CertificateArn:
+    Type: String
+
+Resources:
+  AdditionalPublicSubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      CidrBlock: '10.0.6.0/24'
+      AvailabilityZone: eu-west-1b
+      VpcId: !Ref VpcId
+  PublicRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VpcId
+  SubnetRoute:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref AdditionalPublicSubnet
+  IGWRoute:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: !Ref PublicRouteTable
+      GatewayId: !Ref InternetGatewayId
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Type: 'application'
+      Name: concourse-up
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref SecurityGroupId
+      Subnets:
+        - !Ref SubnetId
+        - !Ref AdditionalPublicSubnet
+  HttpsTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      Name: ConcourseUpHttpsTargetGroup
+      Port: '443'
+      Protocol: HTTPS
+      VpcId: !Ref VpcId
+      Targets:
+        - Id: !Ref InstanceId
+  GrafanaTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      Name: ConcourseUpGrafana
+      Port: '3000'
+      Protocol: HTTPS
+      VpcId: !Ref VpcId
+      Targets:
+        - Id: !Ref InstanceId
+  AlbListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref HttpsTargetGroup
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+  AlbGrafanaListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref GrafanaTargetGroup
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 3000
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+  RecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Sub
+        - '${DomainName}.'
+        - DomainName: !ImportValue AccountHostName
+      Name: !Sub
+        - '${SubDomain}.${DomainName}'
+        - DomainName: !ImportValue AccountHostName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt LoadBalancer.DNSName
+        HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
+
+Outputs:
+  LoadBalancerDNS:
+    Value: !GetAtt LoadBalancer.DNSName
+    Export:
+      Name: ConcourseLoadBalancerDNS

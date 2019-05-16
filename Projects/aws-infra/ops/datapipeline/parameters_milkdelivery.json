@@ -1,0 +1,12 @@
+{
+    "values":
+    {
+        "myOutputS3Loc"            :   "s3://prod-milkdelivery-data/",
+        "myLogS3Path"              :   "s3://prod-milkdelivery-log",
+        "myDDBReadThroughputRatio" :   "0.5",
+        "myDDBTableName"           :   "MilkDeliveryTable",
+        "myInstanceType"           :   "m1.medium",
+        "myInstanceCount"          :   "1",
+        "myRegion"                 :   "eu-west-1"
+    }
+}

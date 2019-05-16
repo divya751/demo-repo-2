@@ -1,0 +1,13 @@
+{
+  "stackName": "WebFrontendRewriter",
+  "tags": {
+    "CostCenter": "OpenFarm",
+    "SystemContext": "Platform"
+  },
+  "region": "us-east-1",
+  "parameters": {
+    "FrontendCDN": "E31XUEYTOP6KT4"
+  },
+  "opts": "--capabilities CAPABILITY_NAMED_IAM",
+  "postDeploy": "./add-cloudfront-trigger.sh"
+}

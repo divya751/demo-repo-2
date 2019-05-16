@@ -1,0 +1,21 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Creates policy that allows newly created users to change their password upon first login
+
+Resources:
+  ChangePasswordPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Description: >-
+        Policy that allows newly created users to change their password upon first login
+      ManagedPolicyName: iammpChangePassword
+      Path: /
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowIndividualUserToChangeTheirPassword
+            Effect: Allow
+            Action:
+              - 'iam:ChangePassword'
+            Resource:
+              - !Join ['', [!Sub 'arn:aws:iam::${AWS::AccountId}:user/', '${aws:username}']]

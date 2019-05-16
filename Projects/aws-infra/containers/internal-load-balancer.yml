@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Internal load balancer
+
+Parameters:
+  DeregistrationDelay:
+    Type: String
+
+Resources:
+  SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: ECS private load balancer security group
+      VpcId: !ImportValue VPC
+  InboundHTTP:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: '80'
+      ToPort: '80'
+      CidrIp: !ImportValue VPCCidrBlock
+  InboundHTTPS:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: '443'
+      ToPort: '443'
+      CidrIp: !ImportValue VPCCidrBlock
+  LoadBalancer:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Name: InternalServices
+      Scheme: internal
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: '30'
+      Subnets:
+        - !ImportValue PrivateSubnetAZA
+        - !ImportValue PrivateSubnetAZB
+        - !ImportValue PrivateSubnetAZC
+      SecurityGroups:
+        - !Ref SecurityGroup
+  DefaultHTTPTargetGroup:
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Properties:
+      Name: default-internal-http-targets
+      Port: '80'
+      Protocol: HTTP
+      VpcId: !ImportValue VPC
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: !Ref DeregistrationDelay
+  HTTPListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref DefaultHTTPTargetGroup
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: '80'
+      Protocol: HTTP
+
+Outputs:
+  LoadBalancer:
+    Description: The internal ALB ARN
+    Value: !Ref LoadBalancer
+  LoadBalancerDNS:
+    Description: The internal ALB DNS URL
+    Value: !GetAtt LoadBalancer.DNSName
+  LoadBalancerHostedZoneId:
+    Value: !GetAtt LoadBalancer.CanonicalHostedZoneID
+  LoadBalancerFullName:
+    Value: !GetAtt LoadBalancer.LoadBalancerFullName
+  LoadBalancerHTTPListener:
+    Value: !Ref HTTPListener
+  LoadBalancerSecurityGroup:
+    Value: !Ref SecurityGroup

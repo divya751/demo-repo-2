@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Configuration of the API gateway domain
+
+Parameters:
+  CertificateArn:
+    Type: String
+    Description: The ARN of the certificate associated with the wildcard domain name
+  SubDomain:
+    Type: String
+  CloudfrontHostedZoneId:
+    Type: String
+    Default: Z2FDTNDATAQYW2
+
+Resources:
+  ApiDomainName:
+    Type: 'AWS::ApiGateway::DomainName'
+    Properties:
+      CertificateArn: !Ref CertificateArn
+      DomainName: !Sub
+        - '${SubDomain}.${DomainName}'
+        - DomainName: !ImportValue AccountHostName
+
+  WebRecordSet:
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      AliasTarget:
+        DNSName: !GetAtt ApiDomainName.DistributionDomainName
+        HostedZoneId: !Ref CloudfrontHostedZoneId
+      HostedZoneName: !Sub
+        - '${DomainName}.'
+        - DomainName: !ImportValue AccountHostName
+      Name: !Sub
+        - '${SubDomain}.${DomainName}'
+        - DomainName: !ImportValue AccountHostName
+      Type: A
+
+Outputs:
+  ApiDomainName:
+    Value: !Sub
+      - '${SubDomain}.${DomainName}'
+      - DomainName: !ImportValue AccountHostName
+    Export:
+      Name: ApiDomainName
+  ApiDistributionDomainName:
+    Value: !GetAtt ApiDomainName.DistributionDomainName
+    Export:
+      Name: ApiDistributionDomainName

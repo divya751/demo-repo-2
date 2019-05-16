@@ -1,0 +1,10 @@
+{
+  "stackName": "CloudformationRole",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "opts": "--capabilities CAPABILITY_NAMED_IAM",
+  "roleName": "",
+  "template": "cloudformation.yml"
+}

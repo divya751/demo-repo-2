@@ -1,0 +1,8 @@
+{
+  "stackName": "WhitelistCORS",
+  "tags": {
+    "CostCenter": "Husdyrfag",
+    "SystemContext": "Platform"
+  },
+  "opts": "--capabilities CAPABILITY_IAM"
+}
